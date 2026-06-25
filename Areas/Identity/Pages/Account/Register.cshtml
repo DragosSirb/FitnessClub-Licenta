@@ -1,0 +1,74 @@
+@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Înregistrare";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5 col-lg-4">
+        <div class="text-center mb-4">
+            <span class="fs-3 fw-bold">Fitness<span class="text-accent">Club</span></span>
+            <p class="text-muted mt-1 mb-0">Creează-ți contul gratuit</p>
+        </div>
+        <div class="card p-4">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input class="form-control" asp-for="Input.Email" placeholder="adresa@exemplu.com" />
+                    <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Parolă</label>
+                    <div class="input-group">
+                        <input class="form-control" asp-for="Input.Password" type="password" placeholder="Alege o parolă" id="regPassword" oninput="checkPasswordStrength(this.value)" />
+                        <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('regPassword', this)" tabindex="-1">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                    <ul class="list-unstyled mt-2 mb-0 small" id="pwdHints">
+                        <li id="hint-len"><i class="bi bi-circle me-1"></i>Minim 6 caractere</li>
+                        <li id="hint-upper"><i class="bi bi-circle me-1"></i>Cel puțin o literă mare</li>
+                        <li id="hint-lower"><i class="bi bi-circle me-1"></i>Cel puțin o literă mică</li>
+                        <li id="hint-digit"><i class="bi bi-circle me-1"></i>Cel puțin o cifră</li>
+                    </ul>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Confirmă parola</label>
+                    <div class="input-group">
+                        <input class="form-control" asp-for="Input.ConfirmPassword" type="password" placeholder="Repetă parola" id="regConfirmPassword" />
+                        <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('regConfirmPassword', this)" tabindex="-1">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Input.ConfirmPassword" class="text-danger small"></span>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Creează cont</button>
+            </form>
+            <p class="text-center text-muted small mt-4 mb-0">
+                Ai deja cont?
+                <a asp-area="Identity" asp-page="/Account/Login">Conectează-te</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function checkPasswordStrength(val) {
+            setHint('hint-len', val.length >= 6);
+            setHint('hint-upper', /[A-Z]/.test(val));
+            setHint('hint-lower', /[a-z]/.test(val));
+            setHint('hint-digit', /[0-9]/.test(val));
+        }
+        function setHint(id, ok) {
+            var el = document.getElementById(id);
+            var icon = el.querySelector('i');
+            el.style.color = ok ? '#2ecc71' : '#e74c3c';
+            icon.className = ok ? 'bi bi-check-circle-fill me-1' : 'bi bi-x-circle me-1';
+        }
+    </script>
+}
