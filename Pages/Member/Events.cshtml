@@ -1,0 +1,154 @@
+@page
+@model FitnessClub.Pages.Member.EventsModel
+@using FitnessClub.Models.Enums
+@{
+    ViewData["Title"] = "Evenimente";
+}
+
+<h2 class="mb-4">Evenimente</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link @(Model.Tab == "upcoming" ? "active" : "")" asp-page="/Member/Events" asp-route-tab="upcoming">Evenimente viitoare</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.Tab == "my" ? "active" : "")" asp-page="/Member/Events" asp-route-tab="my">Evenimentele mele</a>
+    </li>
+    <li class="nav-item ms-auto">
+        <a class="nav-link @(Model.Tab == "history" ? "active" : "")" asp-page="/Member/Events" asp-route-tab="history" title="Istoric">
+            <i class="bi bi-clock-history"></i>
+        </a>
+    </li>
+</ul>
+
+@if (Model.Tab == "upcoming")
+{
+    @if (!Model.UpcomingEvents.Any())
+    {
+        <div class="card p-4 text-center text-muted">Nu există evenimente în viitorul apropiat.</div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var ev in Model.UpcomingEvents)
+            {
+                var spotsLeft = ev.MaxParticipants - ev.Enrollments.Count(e => e.Status == EnrollmentStatus.Confirmed);
+                var isEnrolled = Model.CurrentMember != null && ev.Enrollments.Any(e => e.MemberId == Model.CurrentMember.Id && e.Status == EnrollmentStatus.Confirmed);
+                <div class="col-md-4 mb-4">
+                    <a asp-page="/Member/EventDetail" asp-route-id="@ev.Id" class="card h-100 text-decoration-none text-dark">
+                        @if (ev.ImageUrl != null)
+                        {
+                            <img src="@ev.ImageUrl" class="card-img-top" alt="@ev.Name" style="height:180px;object-fit:cover" />
+                        }
+                        <div class="card-body">
+                            <h5 class="card-title">@ev.Name</h5>
+                            <p class="text-muted small">
+                                <i class="bi bi-calendar me-1"></i>@ev.Date.ToString("dd MMM yyyy")
+                                &middot; @ev.StartTime.ToString("HH:mm") - @ev.EndTime.ToString("HH:mm")
+                            </p>
+                            <p class="text-muted small"><i class="bi bi-geo-alt me-1"></i>@ev.Location</p>
+                            <p class="card-text small">@ev.Description</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong class="text-purple">@ev.Price RON</strong>
+                                @if (spotsLeft == 0 && !isEnrolled)
+                                {
+                                    <span class="badge bg-secondary">Complet</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">@spotsLeft / @ev.MaxParticipants locuri</span>
+                                }
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+}
+else if (Model.Tab == "my")
+{
+    var upcomingEvents = Model.MyEnrollments.Where(e => e.Event.Date >= DateTime.Today).OrderBy(e => e.Event.Date).ToList();
+
+    @if (!upcomingEvents.Any())
+    {
+        <div class="card p-4 text-center">
+            <i class="bi bi-calendar-x fs-1 text-muted d-block mb-2"></i>
+            <p class="text-muted mb-3">Nu ești înscris la niciun eveniment viitor.</p>
+            <a asp-page="/Member/Events" asp-route-tab="upcoming" class="btn btn-primary">Explorează evenimentele</a>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="text-uppercase small fw-bold text-muted">Viitoare</span>
+            <span class="badge bg-primary rounded-pill">@upcomingEvents.Count</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr><th>Eveniment</th><th>Dată</th><th>Locație</th><th>Înscris pe</th><th>Status</th><th>Plată</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in upcomingEvents)
+                    {
+                        <tr>
+                            <td>@e.Event.Name</td>
+                            <td>@e.Event.Date.ToString("dd MMM yyyy")</td>
+                            <td>@e.Event.Location</td>
+                            <td>@e.EnrolledAt.ToString("dd MMM yyyy")</td>
+                            <td><span class="badge @(e.Status == EnrollmentStatus.Confirmed ? "bg-success" : "bg-secondary")">@(e.Status == EnrollmentStatus.Confirmed ? "Confirmat" : "Anulat")</span></td>
+                            <td><span class="badge @(e.PaymentStatus == PaymentStatus.Completed ? "bg-success" : "bg-warning text-dark")">@(e.PaymentStatus == PaymentStatus.Completed ? "Plătit" : "Neachitat")</span></td>
+                            <td><a asp-page="/Member/EventDetail" asp-route-id="@e.EventId" class="btn btn-sm btn-outline-secondary">Detalii</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+else if (Model.Tab == "history")
+{
+    var pastEvents = Model.MyEnrollments.Where(e => e.Event.Date < DateTime.Today).OrderByDescending(e => e.Event.Date).ToList();
+
+    @if (!pastEvents.Any())
+    {
+        <div class="card p-4 text-center text-muted">Nu există evenimente în istoric.</div>
+    }
+    else
+    {
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="text-uppercase small fw-bold text-muted">Istoric</span>
+            <span class="badge bg-secondary rounded-pill">@pastEvents.Count</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead class="table-light">
+                    <tr><th>Eveniment</th><th>Dată</th><th>Locație</th><th>Înscris pe</th><th>Status</th><th>Plată</th></tr>
+                </thead>
+                <tbody class="text-muted">
+                    @foreach (var e in pastEvents)
+                    {
+                        <tr>
+                            <td>@e.Event.Name</td>
+                            <td>@e.Event.Date.ToString("dd MMM yyyy")</td>
+                            <td>@e.Event.Location</td>
+                            <td>@e.EnrolledAt.ToString("dd MMM yyyy")</td>
+                            <td><span class="badge bg-secondary">@(e.Status == EnrollmentStatus.Confirmed ? "Finalizat" : "Anulat")</span></td>
+                            <td><span class="badge @(e.PaymentStatus == PaymentStatus.Completed ? "bg-success" : "bg-secondary")">@(e.PaymentStatus == PaymentStatus.Completed ? "Plătit" : "Neachitat")</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}

@@ -1,0 +1,303 @@
+@page
+@model FitnessClub.Pages.Member.ProgressModel
+@{
+    ViewData["Title"] = "Progres";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Progresul meu</h2>
+    <a asp-page="/Member/Progress" asp-route-log="true" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Adaugă măsurători
+    </a>
+</div>
+
+@if (Model.RandomQuote != null)
+{
+    <blockquote class="blockquote mb-4">
+        <p class="fst-italic">"@Model.RandomQuote.Text"</p>
+        @if (!string.IsNullOrWhiteSpace(Model.RandomQuote.Author) && Model.RandomQuote.Author.ToLower() != "unknown")
+        {
+            <footer class="blockquote-footer">@Model.RandomQuote.Author</footer>
+        }
+    </blockquote>
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="text-muted small">Greutate actuală</div>
+            @if (Model.Measurements.Any())
+            {
+                <div class="fs-3 fw-semibold">@Model.Measurements.First().Weight kg</div>
+            }
+            else
+            {
+                <div class="text-muted">—</div>
+            }
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="text-muted small">Greutate țintă</div>
+            <div class="fs-3 fw-semibold">
+                @(Model.CurrentMember?.GoalWeight.HasValue == true ? $"{Model.CurrentMember.GoalWeight} kg" : "—")
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="text-muted small">Total înregistrări</div>
+            <div class="fs-3 fw-semibold">@Model.Measurements.Count</div>
+        </div>
+    </div>
+</div>
+
+@if (Model.ShowForm)
+{
+    <div class="card p-4 mb-4">
+        <h5 class="mb-3">Adaugă măsurătoare nouă</h5>
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Dată *</label>
+                    <input class="form-control" asp-for="Input.Date" type="date" />
+                    <span asp-validation-for="Input.Date" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Greutate (kg) *</label>
+                    <input class="form-control" asp-for="Input.Weight" type="number" step="0.1" min="0" />
+                    <span asp-validation-for="Input.Weight" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Înălțime (cm)</label>
+                    <input class="form-control" asp-for="Input.Height" type="number" step="0.1" min="0" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Grăsime corporală %</label>
+                    <input class="form-control" asp-for="Input.BodyFatPercentage" type="number" step="0.1" min="0" />
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Piept (cm)</label>
+                    <input class="form-control" asp-for="Input.ChestCm" type="number" step="0.1" min="0" />
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Talie (cm)</label>
+                    <input class="form-control" asp-for="Input.WaistCm" type="number" step="0.1" min="0" />
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Șolduri (cm)</label>
+                    <input class="form-control" asp-for="Input.HipsCm" type="number" step="0.1" min="0" />
+                </div>
+                <div class="col-12 mb-3">
+                    <label class="form-label">Note</label>
+                    <textarea class="form-control" asp-for="Input.Notes" rows="2"></textarea>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Salvează</button>
+            <a asp-page="/Member/Progress" class="btn btn-outline-secondary ms-2">Anulează</a>
+        </form>
+    </div>
+}
+
+@if (Model.Measurements.Any())
+{
+    <div class="mb-4">
+        <canvas id="weightChart" height="100"></canvas>
+    </div>
+
+    <h5 class="mb-3">Istoric măsurători</h5>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Dată</th>
+                    <th>Greutate</th>
+                    <th>Înălțime</th>
+                    <th>Grăsime %</th>
+                    <th>Piept</th>
+                    <th>Talie</th>
+                    <th>Șolduri</th>
+                    <th>Note</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var m in Model.Measurements)
+                {
+                    <tr id="row-@m.Id">
+                        <td>@m.Date.ToString("dd MMM yyyy")</td>
+                        <td><strong>@m.Weight kg</strong></td>
+                        <td>@(m.Height.HasValue ? $"{m.Height} cm" : "—")</td>
+                        <td>@(m.BodyFatPercentage.HasValue ? $"{m.BodyFatPercentage}%" : "—")</td>
+                        <td>@(m.ChestCm.HasValue ? $"{m.ChestCm} cm" : "—")</td>
+                        <td>@(m.WaistCm.HasValue ? $"{m.WaistCm} cm" : "—")</td>
+                        <td>@(m.HipsCm.HasValue ? $"{m.HipsCm} cm" : "—")</td>
+                        <td>@(m.Notes ?? "—")</td>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-link text-muted p-1" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <button type="button" class="dropdown-item" onclick="openEditRow(@m.Id)">
+                                            <i class="bi bi-pencil me-2"></i>Editează
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <form method="post" asp-page-handler="Delete">
+                                            <input type="hidden" name="id" value="@m.Id" />
+                                            <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Ștergi această măsurătoare?')">
+                                                <i class="bi bi-trash me-2"></i>Șterge
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr id="edit-row-@m.Id" style="display:none" class="table-active">
+                        <td colspan="9" class="p-3">
+                            <form method="post">
+                                <input type="hidden" name="EditMeasurementId" value="@m.Id" />
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-6 col-md-2">
+                                        <label class="form-label small mb-1">Dată *</label>
+                                        <input class="form-control form-control-sm" type="date" name="Input.Date" value="@m.Date.ToString("yyyy-MM-dd")" required />
+                                    </div>
+                                    <div class="col-6 col-md-1">
+                                        <label class="form-label small mb-1">Greutate (kg) *</label>
+                                        <input class="form-control form-control-sm" type="number" step="0.1" min="0" name="Input.Weight" value="@m.Weight" required />
+                                    </div>
+                                    <div class="col-6 col-md-1">
+                                        <label class="form-label small mb-1">Înălțime (cm)</label>
+                                        <input class="form-control form-control-sm" type="number" step="0.1" min="0" name="Input.Height" value="@(m.Height?.ToString() ?? "")" />
+                                    </div>
+                                    <div class="col-6 col-md-1">
+                                        <label class="form-label small mb-1">Grăsime %</label>
+                                        <input class="form-control form-control-sm" type="number" step="0.1" min="0" name="Input.BodyFatPercentage" value="@(m.BodyFatPercentage?.ToString() ?? "")" />
+                                    </div>
+                                    <div class="col-4 col-md-1">
+                                        <label class="form-label small mb-1">Piept (cm)</label>
+                                        <input class="form-control form-control-sm" type="number" step="0.1" min="0" name="Input.ChestCm" value="@(m.ChestCm?.ToString() ?? "")" />
+                                    </div>
+                                    <div class="col-4 col-md-1">
+                                        <label class="form-label small mb-1">Talie (cm)</label>
+                                        <input class="form-control form-control-sm" type="number" step="0.1" min="0" name="Input.WaistCm" value="@(m.WaistCm?.ToString() ?? "")" />
+                                    </div>
+                                    <div class="col-4 col-md-1">
+                                        <label class="form-label small mb-1">Șolduri (cm)</label>
+                                        <input class="form-control form-control-sm" type="number" step="0.1" min="0" name="Input.HipsCm" value="@(m.HipsCm?.ToString() ?? "")" />
+                                    </div>
+                                    <div class="col-12 col-md-2">
+                                        <label class="form-label small mb-1">Note</label>
+                                        <input class="form-control form-control-sm" type="text" name="Input.Notes" value="@(m.Notes ?? "")" />
+                                    </div>
+                                    <div class="col-12 col-md-1 d-flex gap-1">
+                                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">Gata</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="closeEditRow(@m.Id)">✕</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else if (!Model.ShowForm)
+{
+    <div class="card p-4 text-center text-muted">
+        Nu există măsurători înregistrate. <a asp-page="/Member/Progress" asp-route-log="true">Adaugă prima măsurătoare!</a>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function openEditRow(id) {
+            document.querySelectorAll('[id^="edit-row-"]').forEach(function (r) { r.style.display = 'none'; });
+            document.getElementById('edit-row-' + id).style.display = '';
+        }
+        function closeEditRow(id) {
+            document.getElementById('edit-row-' + id).style.display = 'none';
+        }
+    </script>
+    @if (Model.Measurements.Any())
+    {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            const labels = [@Html.Raw(string.Join(",", Model.Measurements.OrderBy(m => m.Date).Select(m => $"\"{m.Date:dd MMM}\"")))];
+            const data = [@Html.Raw(string.Join(",", Model.Measurements.OrderBy(m => m.Date).Select(m => m.Weight)))];
+
+            const style = getComputedStyle(document.documentElement);
+            const colorGreen   = style.getPropertyValue('--green').trim();
+            const colorBorder  = style.getPropertyValue('--border').trim();
+            const colorSurface = style.getPropertyValue('--surface').trim();
+            const colorText    = style.getPropertyValue('--text').trim();
+            const colorMuted   = style.getPropertyValue('--text-muted').trim();
+
+            Chart.defaults.color = colorMuted;
+
+            new Chart(document.getElementById('weightChart'), {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Greutate (kg)',
+                        data,
+                        borderColor: colorGreen,
+                        backgroundColor: 'rgba(46,204,113,0.08)',
+                        pointBackgroundColor: colorGreen,
+                        pointBorderColor: colorGreen,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: { color: colorText, font: { size: 13 } }
+                        },
+                        tooltip: {
+                            backgroundColor: colorSurface,
+                            borderColor: colorBorder,
+                            borderWidth: 1,
+                            titleColor: colorText,
+                            bodyColor: colorMuted
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: colorMuted },
+                            grid: { color: colorBorder }
+                        },
+                        y: {
+                            ticks: { color: colorMuted },
+                            grid: { color: colorBorder }
+                        }
+                    }
+                },
+                plugins: [{
+                    id: 'customBackground',
+                    beforeDraw(chart) {
+                        const ctx = chart.canvas.getContext('2d');
+                        ctx.save();
+                        ctx.fillStyle = colorSurface;
+                        ctx.fillRect(0, 0, chart.width, chart.height);
+                        ctx.restore();
+                    }
+                }]
+            });
+        </script>
+    }
+}

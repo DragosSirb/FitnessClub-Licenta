@@ -1,0 +1,196 @@
+@page
+@model FitnessClub.Pages.Member.ClassesModel
+@using FitnessClub.Models.Enums
+@{
+    ViewData["Title"] = "Clase de grup";
+}
+
+<h2 class="mb-4">Clase de grup</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link @(Model.Tab == "schedule" ? "active" : "")" asp-page="/Member/Classes" asp-route-tab="schedule">Program săptămânal</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.Tab == "my" ? "active" : "")" asp-page="/Member/Classes" asp-route-tab="my">Clasele mele</a>
+    </li>
+    <li class="nav-item ms-auto">
+        <a class="nav-link @(Model.Tab == "history" ? "active" : "")" asp-page="/Member/Classes" asp-route-tab="history" title="Istoric">
+            <i class="bi bi-clock-history"></i>
+        </a>
+    </li>
+</ul>
+
+@if (Model.Tab == "schedule")
+{
+    <div class="mb-4">
+        <form method="get">
+            <input type="hidden" name="tab" value="schedule" />
+            <div class="d-flex flex-wrap gap-3 align-items-end">
+                <div>
+                    <label class="form-label small text-muted mb-1">Tip clasă</label>
+                    <select name="classFilter" class="form-select form-select-sm" style="min-width:180px;">
+                        <option value="">Toate clasele</option>
+                        @foreach (var name in Model.AvailableClassNames)
+                        {
+                            <option value="@name" selected="@(Model.ClassFilter == name)">@name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label small text-muted mb-1">Preț</label>
+                    <select name="priceFilter" class="form-select form-select-sm" style="min-width:180px;">
+                        <option value="" selected="@(string.IsNullOrEmpty(Model.PriceFilter))">Toate</option>
+                        <option value="free" selected="@(Model.PriceFilter == "free")">Incluse în abonament</option>
+                        <option value="paid" selected="@(Model.PriceFilter == "paid")">Cu plată separată</option>
+                    </select>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm">Filtrează</button>
+                    <a asp-page="/Member/Classes" asp-route-tab="schedule" class="btn btn-outline-secondary btn-sm">Resetează</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    @if (!Model.UpcomingSchedules.Any())
+    {
+        <div class="card p-4 text-center text-muted">Nu există clase programate în viitorul apropiat.</div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var schedule in Model.UpcomingSchedules)
+            {
+                var spotsLeft = schedule.MaxParticipants - schedule.CurrentParticipants;
+                var isEnrolled = Model.CurrentMember != null &&
+                    schedule.Enrollments.Any(e => e.MemberId == Model.CurrentMember.Id && e.Status == EnrollmentStatus.Confirmed);
+                <div class="col-md-4 mb-3">
+                    <a asp-page="/Member/ClassDetail" asp-route-id="@schedule.Id" class="card h-100 text-decoration-none text-dark">
+                        <div class="card-body">
+                            <h5 class="card-title">@schedule.GroupClass.Name</h5>
+                            <p class="text-muted small mb-1">
+                                <i class="bi bi-person me-1"></i>@schedule.GroupClass.Trainer.FirstName @schedule.GroupClass.Trainer.LastName
+                            </p>
+                            <p class="text-muted small mb-1">
+                                <i class="bi bi-calendar me-1"></i>@schedule.Date.ToString("dddd, dd MMM")
+                            </p>
+                            <p class="text-muted small mb-1">
+                                <i class="bi bi-clock me-1"></i>@schedule.StartTime.ToString("HH:mm") &middot; @schedule.GroupClass.DurationMinutes min
+                            </p>
+                            <p class="text-muted small mb-2">
+                                <i class="bi bi-geo-alt me-1"></i>@schedule.Location
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                @if (spotsLeft == 0 && !isEnrolled)
+                                {
+                                    <span class="badge bg-secondary">Complet</span>
+                                }
+                                else
+                                {
+                                    <span class="small @(spotsLeft == 0 ? "text-danger" : "text-success")">
+                                        @spotsLeft locuri din @schedule.MaxParticipants
+                                    </span>
+                                }
+                                @if (schedule.GroupClass.IncludedInSubscription && Model.ActiveSubscription?.Plan?.IncludesGroupClasses == true)
+                                {
+                                    <span class="badge bg-success">Gratuit cu planul</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">50 RON</span>
+                                }
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+}
+else if (Model.Tab == "my")
+{
+    var upcomingClasses = Model.MyEnrollments.Where(e => e.Schedule.Date >= DateTime.Today).OrderBy(e => e.Schedule.Date).ThenBy(e => e.Schedule.StartTime).ToList();
+
+    @if (!upcomingClasses.Any())
+    {
+        <div class="card p-4 text-center">
+            <i class="bi bi-calendar-x fs-1 text-muted d-block mb-2"></i>
+            <p class="text-muted mb-3">Nu ești înscris la nicio clasă viitoare.</p>
+            <a asp-page="/Member/Classes" asp-route-tab="schedule" class="btn btn-primary">Explorează clasele</a>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="text-uppercase small fw-bold text-muted">Viitoare</span>
+            <span class="badge bg-primary rounded-pill">@upcomingClasses.Count</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr><th>Clasă</th><th>Antrenor</th><th>Dată</th><th>Oră</th><th>Status</th><th>Plată</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in upcomingClasses)
+                    {
+                        <tr>
+                            <td>@e.Schedule.GroupClass.Name</td>
+                            <td>@e.Schedule.GroupClass.Trainer.FirstName @e.Schedule.GroupClass.Trainer.LastName</td>
+                            <td>@e.Schedule.Date.ToString("dd MMM yyyy")</td>
+                            <td>@e.Schedule.StartTime.ToString("HH:mm")</td>
+                            <td><span class="badge @(e.Status == EnrollmentStatus.Confirmed ? "bg-success" : "bg-secondary")">@(e.Status == EnrollmentStatus.Confirmed ? "Confirmat" : "Anulat")</span></td>
+                            <td><span class="badge @(e.PaymentStatus == PaymentStatus.Completed ? "bg-success" : "bg-warning text-dark")">@(e.PaymentStatus == PaymentStatus.Completed ? "Plătit" : "Neachitat")</span></td>
+                            <td><a asp-page="/Member/ClassDetail" asp-route-id="@e.ScheduleId" class="btn btn-sm btn-outline-secondary">Detalii</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+else if (Model.Tab == "history")
+{
+    var pastClasses = Model.MyEnrollments.Where(e => e.Schedule.Date < DateTime.Today).OrderByDescending(e => e.Schedule.Date).ThenByDescending(e => e.Schedule.StartTime).ToList();
+
+    @if (!pastClasses.Any())
+    {
+        <div class="card p-4 text-center text-muted">Nu există clase în istoric.</div>
+    }
+    else
+    {
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="text-uppercase small fw-bold text-muted">Istoric</span>
+            <span class="badge bg-secondary rounded-pill">@pastClasses.Count</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead class="table-light">
+                    <tr><th>Clasă</th><th>Antrenor</th><th>Dată</th><th>Oră</th><th>Status</th><th>Plată</th></tr>
+                </thead>
+                <tbody class="text-muted">
+                    @foreach (var e in pastClasses)
+                    {
+                        <tr>
+                            <td>@e.Schedule.GroupClass.Name</td>
+                            <td>@e.Schedule.GroupClass.Trainer.FirstName @e.Schedule.GroupClass.Trainer.LastName</td>
+                            <td>@e.Schedule.Date.ToString("dd MMM yyyy")</td>
+                            <td>@e.Schedule.StartTime.ToString("HH:mm")</td>
+                            <td><span class="badge bg-secondary">@(e.Status == EnrollmentStatus.Confirmed ? "Finalizat" : "Anulat")</span></td>
+                            <td><span class="badge @(e.PaymentStatus == PaymentStatus.Completed ? "bg-success" : "bg-secondary")">@(e.PaymentStatus == PaymentStatus.Completed ? "Plătit" : "Neachitat")</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}

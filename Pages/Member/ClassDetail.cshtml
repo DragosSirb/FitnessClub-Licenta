@@ -1,0 +1,174 @@
+@page "{id:int}"
+@model FitnessClub.Pages.Member.ClassDetailModel
+@using FitnessClub.Models.Enums
+@{
+    ViewData["Title"] = Model.Schedule?.GroupClass?.Name ?? "Detalii clasă";
+    var isFree = Model.ActiveSubscription?.Plan?.IncludesGroupClasses == true
+                 && Model.Schedule?.GroupClass?.IncludedInSubscription == true;
+}
+
+<div class="mb-3">
+    <a asp-page="/Member/Classes" class="text-decoration-none text-secondary small">
+        <i class="bi bi-arrow-left me-1"></i>Înapoi la clase
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+@if (Model.Schedule == null)
+{
+    <div class="card p-4 text-center text-muted">Clasa nu a fost găsită.</div>
+}
+else
+{
+    var spotsLeft = Model.Schedule.MaxParticipants - Model.Schedule.CurrentParticipants;
+    var isEnrolled = Model.MyEnrollment != null;
+
+    <div class="row g-4">
+        <div class="col-md-7">
+            @if (Model.Schedule.GroupClass.ImageUrl != null)
+            {
+                <img src="@Model.Schedule.GroupClass.ImageUrl" class="img-fluid rounded mb-3" alt="@Model.Schedule.GroupClass.Name" style="max-height:280px;width:100%;object-fit:cover;" />
+            }
+            <h3>@Model.Schedule.GroupClass.Name</h3>
+            @if (!string.IsNullOrEmpty(Model.Schedule.GroupClass.Description))
+            {
+                <div class="bg-light rounded p-3 mb-3 border-start border-4 border-primary">
+                    <p class="mb-0 fs-6 lh-lg text-secondary">@Model.Schedule.GroupClass.Description</p>
+                </div>
+            }
+            <div class="row g-3 text-muted small mt-1">
+                <div class="col-6 d-flex align-items-center gap-2">
+                    <i class="bi bi-person fs-5"></i>
+                    <span>@Model.Schedule.GroupClass.Trainer.FirstName @Model.Schedule.GroupClass.Trainer.LastName</span>
+                </div>
+                <div class="col-6 d-flex align-items-center gap-2">
+                    <i class="bi bi-calendar fs-5"></i>
+                    <span>@Model.Schedule.Date.ToString("dddd, dd MMM yyyy")</span>
+                </div>
+                <div class="col-6 d-flex align-items-center gap-2">
+                    <i class="bi bi-clock fs-5"></i>
+                    <span>@Model.Schedule.StartTime.ToString("HH:mm") &middot; @Model.Schedule.GroupClass.DurationMinutes min</span>
+                </div>
+                <div class="col-6 d-flex align-items-center gap-2">
+                    <i class="bi bi-geo-alt fs-5"></i>
+                    <span>@Model.Schedule.Location</span>
+                </div>
+                <div class="col-6 d-flex align-items-center gap-2">
+                    <i class="bi bi-people fs-5"></i>
+                    <span>@spotsLeft din @Model.Schedule.MaxParticipants locuri disponibile</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm p-4">
+                <div class="mb-3 d-flex justify-content-between align-items-center">
+                    @if (isFree)
+                    {
+                        <span class="h5 mb-0 fw-bold text-success">Gratuit cu planul tău</span>
+                    }
+                    else
+                    {
+                        <span class="h4 mb-0 fw-bold text-purple">50 RON</span>
+                    }
+                    <span class="badge @(spotsLeft > 0 ? "bg-success" : "bg-danger")">
+                        @(spotsLeft > 0 ? $"{spotsLeft} locuri" : "Complet")
+                    </span>
+                </div>
+
+                @if (isEnrolled)
+                {
+                    <div class="alert alert-success mb-3">
+                        <i class="bi bi-check-circle me-2"></i>Ești înscris la această clasă.
+                        <div class="small mt-1 text-muted">
+                            Plată: @(Model.MyEnrollment!.PaymentStatus == PaymentStatus.Completed ? "Achitat" : "Neachitat")
+                            @if (Model.MyEnrollment.PaymentStatus == PaymentStatus.Pending)
+                            {
+                                <span>&ndash; plată la recepția sălii</span>
+                            }
+                        </div>
+                    </div>
+                    @if (Model.Schedule.Date >= DateTime.Today)
+                    {
+                        <form method="post" asp-page-handler="Cancel">
+                            <input type="hidden" name="enrollmentId" value="@Model.MyEnrollment!.Id" />
+                            <button type="submit" class="btn btn-outline-danger w-100"
+                                    onclick="return confirm('Anulezi înscrierea la această clasă?')">
+                                <i class="bi bi-x-circle me-1"></i>Anulează înscrierea
+                            </button>
+                        </form>
+                    }
+                }
+                else if (spotsLeft == 0)
+                {
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-x-circle fs-3 d-block mb-2"></i>
+                        Clasa este completă.
+                    </div>
+                }
+                else if (Model.ClientSecret != null)
+                {
+                    <form id="payment-form">
+                        <div id="payment-element"></div>
+                        <button id="submit" class="btn btn-primary w-100 mt-3">
+                            <span id="button-text">Plătește 50 RON</span>
+                        </button>
+                        <div id="payment-message" class="text-danger mt-2"></div>
+                    </form>
+                }
+                else if (isFree)
+                {
+                    <form method="post" asp-page-handler="Attend">
+                        <input type="hidden" name="paymentMethod" value="Online" />
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-check-circle me-1"></i>Înscrie-te gratuit
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <div class="d-grid gap-2">
+                        <form method="post" asp-page-handler="Attend">
+                            <input type="hidden" name="paymentMethod" value="Online" />
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-credit-card me-1"></i>Plătește online
+                            </button>
+                        </form>
+                        <form method="post" asp-page-handler="Attend">
+                            <input type="hidden" name="paymentMethod" value="InPerson" />
+                            <button type="submit" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-building me-1"></i>Plătește la sală
+                            </button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@if (Model.ClientSecret != null)
+{
+    <script>
+        const stripe = Stripe('@Model.PublishableKey');
+        const elements = stripe.elements({ clientSecret: '@Model.ClientSecret' });
+        const paymentElement = elements.create('payment');
+        paymentElement.mount('#payment-element');
+        document.getElementById('payment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const { error } = await stripe.confirmPayment({
+                elements,
+                confirmParams: { return_url: 'http://localhost:5200/Payment/Success?type=class' }
+            });
+            if (error) document.getElementById('payment-message').textContent = error.message;
+        });
+    </script>
+}

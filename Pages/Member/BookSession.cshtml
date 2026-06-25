@@ -1,0 +1,320 @@
+@page
+@model FitnessClub.Pages.Member.BookSessionModel
+@using FitnessClub.Models.Enums
+@{
+    ViewData["Title"] = "Sesiuni";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h2 class="mb-0">Sesiuni personale</h2>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link @(Model.Tab == "book" ? "active" : "")" asp-page="/Member/BookSession" asp-route-tab="book">
+            <i class="bi bi-calendar-plus me-1"></i>Rezervă
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.Tab == "my" ? "active" : "")" asp-page="/Member/BookSession" asp-route-tab="my">
+            <i class="bi bi-calendar-check me-1"></i>Sesiunile mele
+        </a>
+    </li>
+    <li class="nav-item ms-auto">
+        <a class="nav-link @(Model.Tab == "history" ? "active" : "")" asp-page="/Member/BookSession" asp-route-tab="history" title="Istoric">
+            <i class="bi bi-clock-history"></i>
+        </a>
+    </li>
+</ul>
+
+@if (Model.Tab == "my")
+{
+    var upcomingSessions = Model.MySessions
+                              .Where(s => s.Date >= DateTime.Today)
+                              .OrderBy(s => s.Date)
+                              .ThenBy(s => s.StartTime)
+                              .ToList();
+
+    @if (!upcomingSessions.Any())
+    {
+        <div class="card p-5 text-center">
+            <i class="bi bi-calendar-x fs-2 text-muted d-block mb-3"></i>
+            <p class="text-muted mb-3">Nu ai sesiuni programate.</p>
+            <a asp-page="/Member/BookSession" asp-route-tab="book" class="btn btn-primary">Rezervă prima sesiune</a>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="text-muted small fw-semibold text-uppercase" style="letter-spacing:.05em">Viitoare</span>
+            <span class="badge bg-primary rounded-pill">@upcomingSessions.Count</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Antrenor</th>
+                        <th>Dată</th>
+                        <th>Oră</th>
+                        <th>Durată</th>
+                        <th>Status</th>
+                        <th>Plată</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in upcomingSessions)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@s.Trainer.FirstName @s.Trainer.LastName</td>
+                            <td>@s.Date.ToString("dd MMM yyyy")</td>
+                            <td>@s.StartTime.ToString("HH:mm")</td>
+                            <td class="text-muted">@s.DurationMinutes min</td>
+                            <td>
+                                <span class="badge @(s.Status == SessionStatus.Confirmed ? "bg-success" : "bg-warning")">
+                                    @(s.Status == SessionStatus.Pending ? "În așteptare" : "Confirmat")
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge @(s.PaymentStatus == PaymentStatus.Completed ? "bg-success" : "bg-danger")">
+                                    @(s.PaymentStatus == PaymentStatus.Completed ? "Achitat" : "Neachitat")
+                                </span>
+                            </td>
+                            <td>
+                                <form method="post" asp-page-handler="Cancel">
+                                    <input type="hidden" name="sessionId" value="@s.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Anulezi această sesiune?')">Anulează</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+else if (Model.Tab == "history")
+{
+    var pastSessions = Model.MySessions.Where(s => s.Date < DateTime.Today).OrderByDescending(s => s.Date).ToList();
+
+    @if (!pastSessions.Any())
+    {
+        <div class="card p-4 text-center text-muted">Nu există sesiuni în istoric.</div>
+    }
+    else
+    {
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="text-muted small fw-semibold text-uppercase" style="letter-spacing:.05em">Istoric</span>
+            <span class="badge bg-secondary rounded-pill">@pastSessions.Count</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Antrenor</th>
+                        <th>Dată</th>
+                        <th>Oră</th>
+                        <th>Durată</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in pastSessions)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@s.Trainer.FirstName @s.Trainer.LastName</td>
+                            <td>@s.Date.ToString("dd MMM yyyy")</td>
+                            <td>@s.StartTime.ToString("HH:mm")</td>
+                            <td class="text-muted">@s.DurationMinutes min</td>
+                            <td>
+                                <span class="badge @(s.Status == SessionStatus.Completed ? "bg-success" : "bg-secondary")">
+                                    @(s.Status == SessionStatus.Completed ? "Finalizat" : "Anulat")
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+else
+{
+    @if (Model.ClientSecret != null)
+    {
+        <div class="card p-4" style="max-width:520px">
+            <h5 class="mb-3">Finalizează plata</h5>
+            <form id="payment-form">
+                <div id="payment-element"></div>
+                <button id="submit" class="btn btn-primary w-100 mt-3">
+                    <span id="button-text">Plătește @Model.SessionPrice RON</span>
+                </button>
+                <div id="payment-message" class="text-danger mt-2"></div>
+            </form>
+        </div>
+    }
+    else if (Model.Step == 1)
+    {
+        <p class="text-muted mb-4">Alege antrenorul cu care dorești să lucrezi.</p>
+        <div class="row g-3">
+            @foreach (var trainer in Model.Trainers)
+            {
+                <div class="col-md-4 col-sm-6">
+                    <a asp-page="/Member/BookSession" asp-route-tab="book" asp-route-trainerId="@trainer.Id" class="card p-4 text-center d-flex flex-column text-decoration-none h-100">
+                        @if (trainer.ProfileImageUrl != null)
+                        {
+                            <img src="@trainer.ProfileImageUrl" class="rounded-circle mx-auto d-block mb-3" width="72" height="72" style="object-fit:cover;border:2px solid var(--border)" alt="@trainer.FirstName" />
+                        }
+                        else
+                        {
+                            <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3 text-accent fw-bold" style="width:72px;height:72px;background:var(--surface-hover);border:2px solid var(--border);font-size:1.4rem">
+                                @trainer.FirstName[0]@trainer.LastName[0]
+                            </div>
+                        }
+                        <div class="fw-semibold mb-1">@trainer.FirstName @trainer.LastName</div>
+                        <div class="text-muted small mb-1">@trainer.Expertise</div>
+                        <div class="text-muted" style="font-size:0.78rem">@trainer.YearsOfExperience ani exp.</div>
+                        <div class="mt-auto pt-3">
+                            <span class="text-accent small fw-semibold">Selectează →</span>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+    else if (Model.Step == 2 && Model.SelectedTrainer != null)
+    {
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-page="/Member/BookSession" asp-route-tab="book" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Înapoi
+            </a>
+            <div>
+                <span class="text-muted small">Antrenor</span>
+                <div class="fw-semibold">@Model.SelectedTrainer.FirstName @Model.SelectedTrainer.LastName</div>
+            </div>
+        </div>
+
+        <p class="text-muted mb-3">Alege o dată disponibilă.</p>
+
+        @if (!Model.AvailableDates.Any())
+        {
+            <div class="alert alert-warning">
+                <i class="bi bi-calendar-x me-2"></i>Nu există intervale disponibile în următoarele 4 săptămâni. Încearcă un alt antrenor.
+            </div>
+        }
+        else
+        {
+            <div class="row g-2">
+                @foreach (var (date, slotsLeft) in Model.AvailableDates)
+                {
+                    <div class="col-6 col-sm-4 col-md-3">
+                        <a asp-page="/Member/BookSession"
+                           asp-route-tab="book"
+                           asp-route-trainerId="@Model.TrainerId"
+                           asp-route-selectedDate="@date.ToString("yyyy-MM-dd")"
+                           class="card text-center p-3 text-decoration-none h-100">
+                            <div class="fw-semibold">@date.ToString("ddd")</div>
+                            <div class="text-accent fw-bold" style="font-size:1.1rem">@date.Day</div>
+                            <div class="text-muted small">@date.ToString("MMM")</div>
+                            <div class="text-muted mt-2" style="font-size:0.75rem">
+                                <i class="bi bi-clock me-1"></i>@slotsLeft lor@(slotsLeft == 1 ? "" : "uri")
+                            </div>
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+    }
+    else if (Model.Step == 3 && Model.SelectedTrainer != null)
+    {
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-page="/Member/BookSession" asp-route-tab="book" asp-route-trainerId="@Model.TrainerId" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Înapoi
+            </a>
+            <div>
+                <span class="text-muted small">@Model.SelectedTrainer.FirstName @Model.SelectedTrainer.LastName &mdash; @Model.SelectedDate?.ToString("dddd, dd MMM yyyy")</span>
+            </div>
+        </div>
+
+        <p class="text-muted mb-3">Alege intervalul orar dorit.</p>
+
+        @if (!Model.AvailableSlots.Any())
+        {
+            <div class="alert alert-warning">Nu există intervale disponibile pentru această zi.</div>
+        }
+        else
+        {
+            <div class="card p-4" style="max-width:520px">
+                <form method="post">
+                    <input type="hidden" asp-for="Input.TrainerId" value="@Model.TrainerId" />
+                    <input type="hidden" asp-for="Input.Date" value="@Model.SelectedDate?.ToString("yyyy-MM-dd")" />
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Interval orar</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var slot in Model.AvailableSlots)
+                            {
+                                <input class="btn-check" type="radio" asp-for="Input.StartTime" value="@slot.ToString("HH:mm")" id="slot_@slot.Hour" autocomplete="off" required />
+                                <label class="btn btn-outline-primary btn-sm" for="slot_@slot.Hour">@slot.ToString("HH:mm")</label>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Note (opțional)</label>
+                        <textarea class="form-control" asp-for="Input.Notes" rows="2" placeholder="Obiective specifice sau informații relevante..."></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Metodă de plată</label>
+                        <select class="form-select" asp-for="Input.PaymentMethod">
+                            <option value="Online">Online (card)</option>
+                            <option value="InPerson">Plată la sală</option>
+                        </select>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-2 mb-3 text-muted small">
+                        <span>Preț sesiune</span>
+                        <span class="fw-semibold text-accent">@Model.SessionPrice RON</span>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-circle me-2"></i>Confirmă rezervarea
+                    </button>
+                </form>
+            </div>
+        }
+    }
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    @if (Model.ClientSecret != null)
+    {
+        <script src="https://js.stripe.com/v3/"></script>
+        <script>
+            const stripe = Stripe('@Model.PublishableKey');
+            const clientSecret = '@Model.ClientSecret';
+            const elements = stripe.elements({ clientSecret });
+            const paymentElement = elements.create('payment');
+            paymentElement.mount('#payment-element');
+            const form = document.getElementById('payment-form');
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const { error } = await stripe.confirmPayment({
+                    elements,
+                    confirmParams: { return_url: 'http://localhost:5200/Payment/Success?type=session' }
+                });
+                if (error) document.getElementById('payment-message').textContent = error.message;
+            });
+        </script>
+    }
+}
