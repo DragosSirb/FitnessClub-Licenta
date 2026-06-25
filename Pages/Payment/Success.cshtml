@@ -1,0 +1,48 @@
+@page
+@model FitnessClub.Pages.Payment.SuccessModel
+@{
+    ViewData["Title"] = Model.Failed ? "Plată eșuată" : "Plată reușită";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-5 text-center py-5">
+        <div class="card p-5">
+            @if (Model.Failed)
+            {
+                <i class="bi bi-x-circle-fill text-danger mb-3" style="font-size:3.5rem"></i>
+                <h3 class="mb-2">Plată eșuată</h3>
+                <p class="text-muted mb-4">Tranzacția nu a fost procesată. Nicio sumă nu a fost reținută.</p>
+                <a asp-page="/Member/Dashboard" class="btn btn-outline-secondary">Înapoi la panou</a>
+            }
+            else
+            {
+                <i class="bi bi-check-circle-fill text-accent mb-3" style="font-size:3.5rem"></i>
+                <h3 class="mb-2">Plată efectuată cu succes!</h3>
+                <p class="text-muted mb-4">Tranzacția ta a fost procesată. Îți mulțumim!</p>
+                <div class="d-flex gap-2 justify-content-center flex-wrap">
+                    @if (Model.PaymentType == "order")
+                    {
+                        <a asp-page="/Member/Orders" class="btn btn-primary">Comenzile mele</a>
+                    }
+                    else if (Model.PaymentType == "subscription")
+                    {
+                        <a asp-page="/Member/Subscription" class="btn btn-primary">Abonamentul meu</a>
+                    }
+                    else if (Model.PaymentType == "session")
+                    {
+                        <a asp-page="/Member/BookSession" asp-route-tab="my" class="btn btn-primary">Sesiunile mele</a>
+                    }
+                    else if (Model.PaymentType == "event")
+                    {
+                        <a asp-page="/Member/Events" asp-route-tab="my" class="btn btn-primary">Evenimentele mele</a>
+                    }
+                    else if (Model.PaymentType == "class")
+                    {
+                        <a asp-page="/Member/Classes" asp-route-tab="my" class="btn btn-primary">Clasele mele</a>
+                    }
+                    <a asp-page="/Member/Dashboard" class="btn btn-outline-secondary">Panou principal</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
