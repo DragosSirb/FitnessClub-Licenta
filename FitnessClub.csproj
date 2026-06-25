@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.QuickGrid.EntityFrameworkAdapter" Version="8.0.11" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.11" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.13" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
+    <PackageReference Include="Stripe.net" Version="51.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Pages\Member\Delete.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Member\Edit.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Member\Index.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\MotivationalQote\Create.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\MotivationalQote\Delete.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\MotivationalQote\Edit.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\MotivationalQote\Index.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Recommandation\Create.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Recommandation\Delete.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Recommandation\Edit.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Recommandation\Index.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Session\BookingSessions.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Session\Create.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Session\Delete.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Session\Edit.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Session\Index.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Subscriptions\BuySubscription.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Subscriptions\Create.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Subscriptions\Delete.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Subscriptions\Edit.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Subscriptions\Index.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Trainers\Create.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Trainers\Delete.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Trainers\Edit.cshtml" />
+    <_ContentIncludedByDefault Remove="Pages\Trainers\Index.cshtml" />
+    <_ContentIncludedByDefault Remove="Areas\Identity\Pages\Admin\Dashboard\Index.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="Pages\Admin\Dashboard\Index.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\images\shop\" />
+    <Folder Include="wwwroot\uploads\profiles\" />
+    <Folder Include="wwwroot\videosAndPhotos\" />
+  </ItemGroup>
+
+</Project>
