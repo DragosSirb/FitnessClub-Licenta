@@ -1,0 +1,132 @@
+@page
+@model FitnessClub.Pages.Trainer.ClassesModel
+@using FitnessClub.Models.Enums
+@{
+    ViewData["Title"] = "Clasele mele";
+}
+
+<h2 class="mb-4">Clasele mele</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+@if (!Model.MyClasses.Any())
+{
+    <div class="card p-4 text-center text-muted">Nu ai clase de grup atribuite încă.</div>
+}
+else
+{
+    @foreach (var cls in Model.MyClasses)
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">@cls.Name</h5>
+                <span class="text-muted small">@cls.DurationMinutes min &middot; @(cls.IncludedInSubscription ? "Inclus în abonament" : "Cu plată separată")</span>
+            </div>
+            <div class="card-body">
+                <p>@cls.Description</p>
+                @if (cls.Schedules.Any(s => s.Date >= DateTime.Today && s.Status == ScheduleStatus.Scheduled))
+                {
+                    <h6 class="mt-3 mb-2">Sesiuni viitoare</h6>
+                    <div class="table-responsive" style="overflow:visible">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Dată</th>
+                                    <th>Oră</th>
+                                    <th>Locație</th>
+                                    <th>Participanți</th>
+                                    <th>Status</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var schedule in cls.Schedules.Where(s => s.Date >= DateTime.Today && s.Status == ScheduleStatus.Scheduled).OrderBy(s => s.Date))
+                                {
+                                    <tr>
+                                        <td>@schedule.Date.ToString("dd MMM yyyy")</td>
+                                        <td>@schedule.StartTime.ToString("HH:mm")</td>
+                                        <td>@schedule.Location</td>
+                                        <td>@schedule.CurrentParticipants / @schedule.MaxParticipants</td>
+                                        <td><span class="badge bg-success">Programat</span></td>
+                                        <td class="text-end">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
+                                                    <i class="bi bi-three-dots-vertical"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li>
+                                                        <button type="button" class="dropdown-item" onclick="openScheduleEdit(@schedule.Id)">
+                                                            <i class="bi bi-pencil me-1"></i>Editează
+                                                        </button>
+                                                    </li>
+                                                    <li>
+                                                        <form method="post" asp-page-handler="CancelSchedule">
+                                                            <input type="hidden" name="scheduleId" value="@schedule.Id" />
+                                                            <button type="submit" class="dropdown-item text-danger">
+                                                                <i class="bi bi-x-circle me-1"></i>Anulează
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr id="edit-sched-@schedule.Id" style="display:none" class="table-active">
+                                        <td colspan="6">
+                                            <form method="post" asp-page-handler="EditSchedule" class="row g-2 align-items-end p-2">
+                                                <input type="hidden" name="scheduleId" value="@schedule.Id" />
+                                                <div class="col-md-2">
+                                                    <label class="form-label small mb-1">Dată</label>
+                                                    <input type="date" name="date" class="form-control form-control-sm"
+                                                           value="@schedule.Date.ToString("yyyy-MM-dd")" required />
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label small mb-1">Oră</label>
+                                                    <input type="time" name="startTime" class="form-control form-control-sm"
+                                                           value="@schedule.StartTime.ToString("HH:mm")" required />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label small mb-1">Locație</label>
+                                                    <input type="text" name="location" class="form-control form-control-sm"
+                                                           value="@schedule.Location" required />
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <label class="form-label small mb-1">Max. participanți</label>
+                                                    <input type="number" name="maxParticipants" class="form-control form-control-sm"
+                                                           value="@schedule.MaxParticipants" min="1" required />
+                                                </div>
+                                                <div class="col-md-3 d-flex gap-2">
+                                                    <button type="submit" class="btn btn-sm btn-primary">Gata</button>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="closeScheduleEdit(@schedule.Id)">&#x2715;</button>
+                                                </div>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted small">Nu există sesiuni programate în viitorul apropiat.</p>
+                }
+            </div>
+        </div>
+    }
+}
+
+@section Scripts {
+    <script>
+        function openScheduleEdit(id) {
+            document.querySelectorAll('[id^="edit-sched-"]').forEach(function (r) { r.style.display = 'none'; });
+            document.getElementById('edit-sched-' + id).style.display = '';
+        }
+        function closeScheduleEdit(id) {
+            document.getElementById('edit-sched-' + id).style.display = 'none';
+        }
+    </script>
+}

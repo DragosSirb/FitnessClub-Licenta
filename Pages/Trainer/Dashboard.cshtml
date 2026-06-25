@@ -1,0 +1,101 @@
+@page
+@model FitnessClub.Pages.Trainer.DashboardModel
+@using FitnessClub.Models.Enums
+@{
+    ViewData["Title"] = "Panou antrenor";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="mb-0">Bună ziua, @Model.CurrentTrainer?.FirstName!</h2>
+        <p class="text-muted small mb-0">@DateTime.Today.ToString("dddd, dd MMMM yyyy")</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card p-4 h-100 text-center">
+            <div class="text-muted small fw-semibold text-uppercase mb-2" style="letter-spacing:.06em">Sesiuni azi</div>
+            <div class="display-6 fw-bold text-accent">@Model.TodaySessions.Count</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-4 h-100 text-center">
+            <div class="text-muted small fw-semibold text-uppercase mb-2" style="letter-spacing:.06em">Clienți</div>
+            <div class="display-6 fw-bold text-accent">@Model.TotalClients</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-4 h-100 text-center">
+            <div class="text-muted small fw-semibold text-uppercase mb-2" style="letter-spacing:.06em">Sesiuni lună</div>
+            <div class="display-6 fw-bold text-accent">@Model.SessionsThisMonth</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card p-4 h-100 text-center">
+            <div class="text-muted small fw-semibold text-uppercase mb-2" style="letter-spacing:.06em">Clase lună</div>
+            <div class="display-6 fw-bold text-accent">@Model.ClassesThisMonth</div>
+        </div>
+    </div>
+</div>
+
+@if (Model.PendingRequests.Any())
+{
+    <div class="card mb-3">
+        <div class="card-header d-flex align-items-center gap-2">
+            <span class="fw-semibold">Cereri în așteptare</span>
+            <span class="badge bg-warning">@Model.PendingRequests.Count</span>
+        </div>
+        @foreach (var session in Model.PendingRequests)
+        {
+            <div class="d-flex align-items-center justify-content-between px-4 py-3" style="border-bottom:1px solid var(--border)">
+                <div>
+                    <div class="fw-semibold">@session.Member.FirstName @session.Member.LastName</div>
+                    <div class="text-muted small">
+                        @session.Date.ToString("dd MMM yyyy") &middot; @session.StartTime.ToString("HH:mm") &middot; @session.DurationMinutes min
+                    </div>
+                    @if (session.Notes != null)
+                    {
+                        <div class="text-muted small fst-italic mt-1">@session.Notes</div>
+                    }
+                </div>
+                <div class="d-flex gap-2 flex-shrink-0">
+                    <form method="post" asp-page-handler="Confirm">
+                        <input type="hidden" name="sessionId" value="@session.Id" />
+                        <button type="submit" class="btn btn-success btn-sm">Confirmă</button>
+                    </form>
+                    <form method="post" asp-page-handler="Decline">
+                        <input type="hidden" name="sessionId" value="@session.Id" />
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Refuză</button>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<div class="card">
+    <div class="card-header fw-semibold">
+        <i class="bi bi-calendar2-week me-2"></i>Programul de azi
+    </div>
+    @if (!Model.TodaySessions.Any())
+    {
+        <div class="card-body text-muted">Nu sunt sesiuni programate pentru azi.</div>
+    }
+    else
+    {
+        @foreach (var session in Model.TodaySessions)
+        {
+            <div class="d-flex align-items-center gap-3 px-4 py-3" style="border-bottom:1px solid var(--border)">
+                <div class="text-center flex-shrink-0" style="min-width:52px">
+                    <div class="fw-bold text-accent" style="font-size:1.1rem">@session.StartTime.ToString("HH:mm")</div>
+                    <div class="text-muted" style="font-size:0.75rem">@session.DurationMinutes min</div>
+                </div>
+                <div>
+                    <div class="fw-semibold">@session.Member.FirstName @session.Member.LastName</div>
+                    <span class="badge bg-success">Confirmat</span>
+                </div>
+            </div>
+        }
+    }
+</div>
