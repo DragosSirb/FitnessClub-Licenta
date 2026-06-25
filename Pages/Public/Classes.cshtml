@@ -1,0 +1,42 @@
+@page
+@model FitnessClub.Pages.Public.ClassesModel
+@{
+    ViewData["Title"] = "Clase de grup";
+}
+
+<h2 class="text-center mb-4">Clase de grup</h2>
+
+@if (!Model.UpcomingSchedules.Any())
+{
+    <div class="text-center text-muted p-5">Nu există clase programate în acest moment.</div>
+}
+else
+{
+    <div class="row">
+        @foreach (var schedule in Model.UpcomingSchedules)
+        {
+            var spotsLeft = schedule.MaxParticipants - schedule.CurrentParticipants;
+            var classHref = User.IsInRole("member")
+                ? Url.Page("/Member/ClassDetail", new { id = schedule.Id })
+                : Url.Page("/Account/Login", new { area = "Identity" });
+            <div class="col-md-4 mb-3">
+                <a href="@classHref" class="card h-100 text-decoration-none text-dark">
+                    <div class="card-body">
+                        <h5 class="card-title">@schedule.GroupClass.Name</h5>
+                        <p class="text-muted small">@schedule.GroupClass.Trainer.FirstName @schedule.GroupClass.Trainer.LastName &middot; @schedule.GroupClass.DurationMinutes min</p>
+                        <p class="text-muted small"><i class="bi bi-calendar me-1"></i>@schedule.Date.ToString("dddd, dd MMM")</p>
+                        <p class="text-muted small"><i class="bi bi-clock me-1"></i>@schedule.StartTime.ToString("HH:mm")</p>
+                        <p class="text-muted small"><i class="bi bi-geo-alt me-1"></i>@schedule.Location</p>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <span class="@(spotsLeft == 0 ? "text-danger" : "text-success") small">@spotsLeft locuri disponibile</span>
+                            @if (schedule.GroupClass.IncludedInSubscription)
+                            {
+                                <span class="badge bg-success">Inclus în plan</span>
+                            }
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+}

@@ -1,0 +1,272 @@
+@page
+@model FitnessClub.Pages.IndexModel
+@{
+    ViewData["Title"] = "Acasă";
+    var isMember = User.IsInRole("member");
+}
+
+<section class="py-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h1 class="display-4 fw-bold">Transformă-ți corpul,<br /><span class="text-accent">îmbunătățește-ți viața</span></h1>
+            <p class="lead text-muted mt-3 mb-5">
+                Alătură-te FitnessClub și beneficiază de antrenori de top, clase de grup și echipamente moderne.
+                Călătoria ta spre o viață sănătoasă începe aici.
+            </p>
+            <div class="d-flex gap-3 justify-content-center">
+                @if (!User.Identity!.IsAuthenticated)
+                {
+                    <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-primary btn-lg px-5">Începe acum</a>
+                    <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-outline-secondary btn-lg px-5">Conectare</a>
+                }
+                else
+                {
+                    <a asp-page="/Member/Dashboard" class="btn btn-primary btn-lg px-5">Mergi la panou</a>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@if (Model.PopularPlans.Any())
+{
+    <section class="mb-5">
+        <h2 class="text-center mb-2">Planurile noastre</h2>
+        <p class="text-center text-muted mb-5">Alege abonamentul potrivit obiectivelor tale</p>
+        <div class="row justify-content-center align-items-stretch">
+            @foreach (var plan in Model.PopularPlans)
+            {
+                <div class="col-lg-4 col-md-6 mb-4">
+                    @if (isMember)
+                    {
+                        <a asp-page="/Member/BuyPlan" asp-route-planId="@plan.Id" class="card h-100 p-4 d-flex flex-column text-decoration-none">
+                            <div class="text-center mb-4">
+                                <h4 class="mb-3">@plan.Name</h4>
+                                <div class="display-5 text-accent fw-bold mb-2">@plan.Price<span class="fs-5 text-muted"> RON</span></div>
+                            </div>
+                            <p class="text-muted text-center flex-grow-1">@plan.Description</p>
+                            <div class="mt-auto pt-3 text-center">
+                                @if (plan.IncludesGroupClasses)
+                                {
+                                    <div class="badge bg-success mb-3 w-100 py-2 fs-6">✓ Include clase de grup</div>
+                                }
+                            </div>
+                        </a>
+                    }
+                    else
+                    {
+                        <div class="card h-100 p-4 d-flex flex-column">
+                            <div class="text-center mb-4">
+                                <h4 class="mb-3">@plan.Name</h4>
+                                <div class="display-5 text-accent fw-bold mb-2">@plan.Price<span class="fs-5 text-muted"> RON</span></div>
+                            </div>
+                            <p class="text-muted text-center flex-grow-1">@plan.Description</p>
+                            <div class="mt-auto pt-3 text-center">
+                                @if (plan.IncludesGroupClasses)
+                                {
+                                    <div class="badge bg-success mb-3 w-100 py-2 fs-6">✓ Include clase de grup</div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        <div class="text-center mt-4">
+            <a asp-page="/Plans/Index" class="btn btn-outline-secondary px-4">Vezi toate planurile</a>
+        </div>
+    </section>
+}
+
+@if (Model.FeaturedTrainers.Any())
+{
+    <section class="mb-5 py-4">
+        <h2 class="text-center mb-2">Antrenorii noștri</h2>
+        <p class="text-center text-muted mb-5">Lucrează față în față cu un antrenor certificat</p>
+        <div class="row justify-content-center">
+            @foreach (var trainer in Model.FeaturedTrainers)
+            {
+                <div class="col-lg-3 col-md-6 mb-4">
+                    @if (isMember)
+                    {
+                        <a asp-page="/Member/BookSession" asp-route-trainerId="@trainer.Id" class="card h-100 p-4 text-center d-flex flex-column text-decoration-none">
+                            <div class="mb-3">
+                                @if (trainer.ProfileImageUrl != null)
+                                {
+                                    <img src="@trainer.ProfileImageUrl" class="rounded-circle" width="100" height="100" style="object-fit:cover;border:3px solid var(--border-color);" alt="@trainer.FirstName" />
+                                }
+                                else
+                                {
+                                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center mx-auto" style="width:100px;height:100px;font-size:2rem;background-color:var(--bg-dark);border:3px solid var(--border-color);color:var(--text-main);">
+                                        @trainer.FirstName[0]@trainer.LastName[0]
+                                    </div>
+                                }
+                            </div>
+                            <h5 class="mb-1">@trainer.FirstName @trainer.LastName</h5>
+                            <p class="text-accent small mb-2">@trainer.Expertise</p>
+                            <p class="text-muted small mt-auto mb-0 pt-3" style="border-top:1px solid var(--border-color)">@trainer.YearsOfExperience ani experiență</p>
+                        </a>
+                    }
+                    else
+                    {
+                        <div class="card h-100 p-4 text-center d-flex flex-column">
+                            <div class="mb-3">
+                                @if (trainer.ProfileImageUrl != null)
+                                {
+                                    <img src="@trainer.ProfileImageUrl" class="rounded-circle" width="100" height="100" style="object-fit:cover;border:3px solid var(--border-color);" alt="@trainer.FirstName" />
+                                }
+                                else
+                                {
+                                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center mx-auto" style="width:100px;height:100px;font-size:2rem;background-color:var(--bg-dark);border:3px solid var(--border-color);color:var(--text-main);">
+                                        @trainer.FirstName[0]@trainer.LastName[0]
+                                    </div>
+                                }
+                            </div>
+                            <h5 class="mb-1">@trainer.FirstName @trainer.LastName</h5>
+                            <p class="text-accent small mb-2">@trainer.Expertise</p>
+                            <p class="text-muted small mt-auto mb-0 pt-3" style="border-top:1px solid var(--border-color)">@trainer.YearsOfExperience ani experiență</p>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        @if (!isMember)
+        {
+            <div class="text-center mt-4">
+                <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-outline-secondary px-4">Conectează-te pentru rezervare</a>
+            </div>
+        }
+    </section>
+}
+
+@if (Model.PopularClasses.Any())
+{
+    <section class="mb-5">
+        <h2 class="text-center mb-2">Clase de grup</h2>
+        <p class="text-center text-muted mb-5">Cunoaște oameni noi, rămâi motivat</p>
+        <div class="row">
+            @foreach (var cls in Model.PopularClasses)
+            {
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card h-100 overflow-hidden d-flex flex-column">
+                        @if (cls.ImageUrl != null)
+                        {
+                            <img src="@cls.ImageUrl" alt="@cls.Name" style="height:200px;object-fit:cover;width:100%;border-bottom:1px solid var(--border-color);" />
+                        }
+                        <div class="card-body d-flex flex-column p-4">
+                            <h5 class="mb-1">@cls.Name</h5>
+                            <p class="text-accent small mb-3">
+                                <i class="bi bi-person me-1"></i>@cls.Trainer.FirstName @cls.Trainer.LastName &middot;
+                                <i class="bi bi-clock me-1"></i>@cls.DurationMinutes min
+                            </p>
+                            <p class="text-muted flex-grow-1">@(cls.Description.Length > 100 ? cls.Description[..100] + "…" : cls.Description)</p>
+                            <div class="mt-auto pt-3">
+                                @if (cls.IncludedInSubscription)
+                                {
+                                    <div class="badge bg-success w-100 py-2">Inclus în abonament</div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="text-center mt-4">
+            <a asp-page="/Public/Classes" class="btn btn-outline-secondary px-4">Vezi programul complet</a>
+        </div>
+    </section>
+}
+
+@if (Model.UpcomingEvents.Any())
+{
+    <section class="mb-5">
+        <h2 class="text-center mb-2">Evenimente viitoare</h2>
+        <p class="text-center text-muted mb-5">Competiții, workshop-uri și provocări</p>
+        <div class="row">
+            @foreach (var ev in Model.UpcomingEvents)
+            {
+                <div class="col-lg-4 col-md-6 mb-4">
+                    @if (isMember)
+                    {
+                        <a asp-page="/Member/EventDetail" asp-route-id="@ev.Id" class="card h-100 overflow-hidden d-flex flex-column text-decoration-none">
+                            @if (ev.ImageUrl != null)
+                            {
+                                <img src="@ev.ImageUrl" alt="@ev.Name" style="height:200px;object-fit:cover;width:100%;border-bottom:1px solid var(--border-color);" />
+                            }
+                            <div class="card-body d-flex flex-column p-4">
+                                <h5 class="mb-2">@ev.Name</h5>
+                                <p class="text-accent small mb-3">
+                                    <i class="bi bi-calendar-event me-1"></i>@ev.Date.ToString("dd MMM yyyy")<br />
+                                    <i class="bi bi-geo-alt me-1"></i>@ev.Location
+                                </p>
+                                <p class="text-muted flex-grow-1">@(ev.Description.Length > 100 ? ev.Description[..100] + "…" : ev.Description)</p>
+                                <div class="mt-auto pt-3 d-flex justify-content-between align-items-center" style="border-top:1px solid var(--border-color)">
+                                    <span class="text-muted small">Preț bilet</span>
+                                    <span class="fs-5 text-accent fw-bold">@ev.Price RON</span>
+                                </div>
+                            </div>
+                        </a>
+                    }
+                    else
+                    {
+                        <div class="card h-100 overflow-hidden d-flex flex-column">
+                            @if (ev.ImageUrl != null)
+                            {
+                                <img src="@ev.ImageUrl" alt="@ev.Name" style="height:200px;object-fit:cover;width:100%;border-bottom:1px solid var(--border-color);" />
+                            }
+                            <div class="card-body d-flex flex-column p-4">
+                                <h5 class="mb-2">@ev.Name</h5>
+                                <p class="text-accent small mb-3">
+                                    <i class="bi bi-calendar-event me-1"></i>@ev.Date.ToString("dd MMM yyyy")<br />
+                                    <i class="bi bi-geo-alt me-1"></i>@ev.Location
+                                </p>
+                                <p class="text-muted flex-grow-1">@(ev.Description.Length > 100 ? ev.Description[..100] + "…" : ev.Description)</p>
+                                <div class="mt-auto pt-3 d-flex justify-content-between align-items-center" style="border-top:1px solid var(--border-color)">
+                                    <span class="text-muted small">Preț bilet</span>
+                                    <span class="fs-5 text-accent fw-bold">@ev.Price RON</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        <div class="text-center mt-4">
+            <a asp-page="/Public/Events" class="btn btn-outline-secondary px-4">Vezi toate evenimentele</a>
+        </div>
+    </section>
+}
+
+<footer style="background:var(--surface);border-top:1px solid var(--border);margin-top:4rem;padding:3rem 0 2rem">
+    <div class="container">
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="fw-bold fs-5 mb-2">Fitness<span class="text-accent">Club</span></div>
+                <p class="text-muted small mb-0">Sala ta dedicată performanței și bunăstării. Antrenori certificați, clase variate și echipamente moderne.</p>
+            </div>
+            <div class="col-md-4">
+                <div class="fw-semibold mb-2 text-muted small text-uppercase" style="letter-spacing:.06em">Navigare</div>
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-1"><a asp-page="/Public/Trainers" class="text-muted small">Antrenori</a></li>
+                    <li class="mb-1"><a asp-page="/Public/Classes" class="text-muted small">Clase de grup</a></li>
+                    <li class="mb-1"><a asp-page="/Public/Events" class="text-muted small">Evenimente</a></li>
+                    <li class="mb-1"><a asp-page="/Plans/Index" class="text-muted small">Planuri</a></li>
+                    <li><a asp-page="/Shop/Index" class="text-muted small">Magazin</a></li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <div class="fw-semibold mb-2 text-muted small text-uppercase" style="letter-spacing:.06em">Contact</div>
+                <ul class="list-unstyled mb-0">
+                    <li class="text-muted small mb-1"><i class="bi bi-geo-alt me-2 text-accent"></i>Strada Teodor Mihali 58-60, Cluj-Napoca</li>
+                    <li class="text-muted small mb-1"><i class="bi bi-telephone me-2 text-accent"></i>+40 264 000 000</li>
+                    <li class="text-muted small mb-1"><i class="bi bi-envelope me-2 text-accent"></i>admin@fitnessclub.ro</li>
+                    <li class="text-muted small"><i class="bi bi-clock me-2 text-accent"></i>Lun–Vin: 07:00–22:00 &middot; Sam–Dum: 08:00–20:00</li>
+                </ul>
+            </div>
+        </div>
+        <div style="border-top:1px solid var(--border);padding-top:1.25rem" class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span class="text-muted small">&copy; @DateTime.Now.Year FitnessClub. Toate drepturile rezervate.</span>
+            <span class="text-muted small">Stay fit, stay strong!</span>
+        </div>
+    </div>
+</footer>

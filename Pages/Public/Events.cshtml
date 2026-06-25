@@ -1,0 +1,42 @@
+@page
+@model FitnessClub.Pages.Public.EventsModel
+@{
+    ViewData["Title"] = "Evenimente";
+}
+
+<h2 class="text-center mb-4">Evenimente viitoare</h2>
+
+@if (!Model.Events.Any())
+{
+    <div class="text-center text-muted p-5">Nu există evenimente în acest moment.</div>
+}
+else
+{
+    <div class="row">
+        @foreach (var ev in Model.Events)
+        {
+            var spotsLeft = ev.MaxParticipants - ev.Enrollments.Count;
+            var evHref = User.IsInRole("member")
+                ? Url.Page("/Member/EventDetail", new { id = ev.Id })
+                : Url.Page("/Account/Login", new { area = "Identity" });
+            <div class="col-md-4 mb-4">
+                <a href="@evHref" class="card h-100 text-decoration-none text-dark">
+                    @if (ev.ImageUrl != null)
+                    {
+                        <img src="@ev.ImageUrl" class="card-img-top" alt="@ev.Name" style="height:200px;object-fit:cover" />
+                    }
+                    <div class="card-body">
+                        <h5 class="card-title">@ev.Name</h5>
+                        <p class="text-muted small"><i class="bi bi-calendar me-1"></i>@ev.Date.ToString("dd MMM yyyy")</p>
+                        <p class="text-muted small"><i class="bi bi-geo-alt me-1"></i>@ev.Location</p>
+                        <p class="card-text small">@ev.Description</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong class="text-purple">@ev.Price RON</strong>
+                            <span class="text-muted small">@spotsLeft locuri disponibile</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+}
