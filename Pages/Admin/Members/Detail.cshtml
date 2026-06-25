@@ -1,0 +1,234 @@
+@page "{id:int}"
+@model FitnessClub.Pages.Admin.Members.DetailModel
+@using FitnessClub.Models.Enums
+@{
+    ViewData["Title"] = $"{Model.Member.FirstName} {Model.Member.LastName}";
+    var activeSub = Model.Member.Subscriptions.FirstOrDefault(s => s.Status == SubscriptionStatus.Active);
+}
+
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+    <div>
+        <a asp-page="/Admin/Members/Index" class="text-muted small"><i class="bi bi-arrow-left me-1"></i>Înapoi la membri</a>
+        <h2 class="mt-1 mb-0">@Model.Member.FirstName @Model.Member.LastName</h2>
+        <span class="text-muted small">@Model.Member.User.Email</span>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+        <span class="badge @(Model.Member.IsActive ? "bg-success" : "bg-danger") fs-6">
+            @(Model.Member.IsActive ? "Activ" : "Inactiv")
+        </span>
+        <form method="post" asp-page-handler="ToggleActive" asp-route-id="@Model.Member.Id">
+            <button type="submit" class="btn @(Model.Member.IsActive ? "btn-outline-danger" : "btn-outline-success") btn-sm">
+                @(Model.Member.IsActive ? "Dezactivează" : "Activează")
+            </button>
+        </form>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<ul class="nav nav-tabs mb-4" id="memberTabs">
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-info">Informații</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-subscriptions">Abonamente</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-sessions">Sesiuni</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-orders">Comenzi</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-classes">Clase</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-events">Evenimente</a></li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="tab-info">
+        <div class="card p-4" style="max-width:600px">
+            <form method="post" asp-page-handler="Save" asp-route-id="@Model.Member.Id">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="form-label">Prenume</label>
+                        <input class="form-control" asp-for="Input.FirstName" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Nume</label>
+                        <input class="form-control" asp-for="Input.LastName" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Telefon</label>
+                        <input class="form-control" asp-for="Input.Phone" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Sex</label>
+                        <select class="form-select" asp-for="Input.Gender">
+                            <option value="Male">Masculin</option>
+                            <option value="Female">Feminin</option>
+                            <option value="Other">Altul</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Data nașterii</label>
+                        <input type="date" class="form-control" asp-for="Input.DateOfBirth" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Greutate țintă (kg)</label>
+                        <input type="number" step="0.1" min="0" class="form-control" asp-for="Input.GoalWeight" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Adresă</label>
+                        <input class="form-control" asp-for="Input.Address" />
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">Salvează modificările</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-subscriptions">
+        @if (!Model.Member.Subscriptions.Any())
+        {
+            <div class="text-muted p-3">Nu există abonamente.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead class="table-light">
+                        <tr><th>Plan</th><th>Dată început</th><th>Dată expirare</th><th>Sumă</th><th>Plată</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var sub in Model.Member.Subscriptions.OrderByDescending(s => s.StartDate))
+                        {
+                            <tr>
+                                <td>@sub.Plan.Name</td>
+                                <td>@sub.StartDate.ToString("dd MMM yyyy")</td>
+                                <td>@sub.EndDate.ToString("dd MMM yyyy")</td>
+                                <td>@sub.PricePaid RON</td>
+                                <td>@(sub.PaymentMethod == PaymentMethod.Online ? "Online" : "La sală")</td>
+                                <td><span class="badge @(sub.Status == SubscriptionStatus.Active ? "bg-success" : "bg-secondary")">@(sub.Status == SubscriptionStatus.Active ? "Activ" : sub.Status == SubscriptionStatus.Expired ? "Expirat" : "Anulat")</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="tab-pane fade" id="tab-sessions">
+        @if (!Model.Member.BookedSessions.Any())
+        {
+            <div class="text-muted p-3">Nu există sesiuni.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead class="table-light">
+                        <tr><th>Antrenor</th><th>Dată</th><th>Oră</th><th>Durată</th><th>Preț</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var session in Model.Member.BookedSessions.OrderByDescending(s => s.Date))
+                        {
+                            <tr>
+                                <td>@session.Trainer.FirstName @session.Trainer.LastName</td>
+                                <td>@session.Date.ToString("dd MMM yyyy")</td>
+                                <td>@session.StartTime.ToString("HH:mm")</td>
+                                <td>@session.DurationMinutes min</td>
+                                <td>@session.PricePaid RON</td>
+                                <td>
+                                    <span class="badge @(session.Status == SessionStatus.Completed ? "bg-success" : session.Status == SessionStatus.Cancelled ? "bg-danger" : session.Status == SessionStatus.Confirmed ? "bg-primary" : "bg-warning text-dark")">
+                                        @(session.Status == SessionStatus.Completed ? "Finalizat" : session.Status == SessionStatus.Cancelled ? "Anulat" : session.Status == SessionStatus.Confirmed ? "Confirmat" : "În așteptare")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="tab-pane fade" id="tab-orders">
+        @if (!Model.Member.Orders.Any())
+        {
+            <div class="text-muted p-3">Nu există comenzi.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead class="table-light">
+                        <tr><th>#</th><th>Dată</th><th>Produse</th><th>Total</th><th>Metodă</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in Model.Member.Orders.OrderByDescending(o => o.CreatedAt))
+                        {
+                            <tr>
+                                <td>#@order.Id</td>
+                                <td>@order.CreatedAt.ToString("dd MMM yyyy")</td>
+                                <td class="small text-muted">@string.Join(", ", order.Items.Select(i => $"{i.Product.Name} ×{i.Quantity}"))</td>
+                                <td>@order.TotalAmount RON</td>
+                                <td>@(order.PaymentMethod == PaymentMethod.Online ? "Online" : "La sală")</td>
+                                <td><span class="badge @(order.Status == OrderStatus.Delivered ? "bg-success" : order.Status == OrderStatus.Cancelled ? "bg-danger" : order.Status == OrderStatus.Processing ? "bg-primary" : "bg-warning text-dark")">@(order.Status == OrderStatus.Delivered ? "Finalizat" : order.Status == OrderStatus.Cancelled ? "Anulat" : order.Status == OrderStatus.Processing ? "În curs" : "În așteptare")</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="tab-pane fade" id="tab-classes">
+        @if (!Model.Member.ClassEnrollments.Any())
+        {
+            <div class="text-muted p-3">Nu există înscrieri la clase.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead class="table-light">
+                        <tr><th>Clasă</th><th>Dată</th><th>Oră</th><th>Locație</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var enr in Model.Member.ClassEnrollments.OrderByDescending(e => e.Schedule.Date))
+                        {
+                            <tr>
+                                <td>@enr.Schedule.GroupClass.Name</td>
+                                <td>@enr.Schedule.Date.ToString("dd MMM yyyy")</td>
+                                <td>@enr.Schedule.StartTime.ToString("HH:mm")</td>
+                                <td>@enr.Schedule.Location</td>
+                                <td><span class="badge @(enr.Status == EnrollmentStatus.Confirmed ? "bg-success" : "bg-secondary")">@(enr.Status == EnrollmentStatus.Confirmed ? "Confirmat" : "Anulat")</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="tab-pane fade" id="tab-events">
+        @if (!Model.Member.EventEnrollments.Any())
+        {
+            <div class="text-muted p-3">Nu există înscrieri la evenimente.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead class="table-light">
+                        <tr><th>Eveniment</th><th>Dată</th><th>Preț achitat</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var enr in Model.Member.EventEnrollments.OrderByDescending(e => e.Event.Date))
+                        {
+                            <tr>
+                                <td>@enr.Event.Name</td>
+                                <td>@enr.Event.Date.ToString("dd MMM yyyy")</td>
+                                <td>@enr.PricePaid RON</td>
+                                <td><span class="badge @(enr.Status == EnrollmentStatus.Confirmed ? "bg-success" : "bg-secondary")">@(enr.Status == EnrollmentStatus.Confirmed ? "Confirmat" : "Anulat")</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

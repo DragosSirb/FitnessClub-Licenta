@@ -1,0 +1,158 @@
+@page
+@model FitnessClub.Pages.Admin.Orders.IndexModel
+@using FitnessClub.Models.Enums
+@{
+    ViewData["Title"] = "Comenzi";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Comenzi</h2>
+    <span class="text-muted small">@Model.Orders.Count comenzi</span>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="mb-3 d-flex gap-2 flex-wrap">
+    <a asp-page="/Admin/Orders/Index" class="btn @(string.IsNullOrEmpty(Model.StatusFilter) ? "btn-primary" : "btn-outline-primary") btn-sm">Toate</a>
+    <a asp-page="/Admin/Orders/Index" asp-route-statusFilter="Pending" class="btn @(Model.StatusFilter == "Pending" ? "btn-primary" : "btn-outline-primary") btn-sm">În așteptare</a>
+    <a asp-page="/Admin/Orders/Index" asp-route-statusFilter="Processing" class="btn @(Model.StatusFilter == "Processing" ? "btn-primary" : "btn-outline-primary") btn-sm">În curs</a>
+    <a asp-page="/Admin/Orders/Index" asp-route-statusFilter="Delivered" class="btn @(Model.StatusFilter == "Delivered" ? "btn-primary" : "btn-outline-primary") btn-sm">Finalizate</a>
+    <a asp-page="/Admin/Orders/Index" asp-route-statusFilter="Cancelled" class="btn @(Model.StatusFilter == "Cancelled" ? "btn-danger" : "btn-outline-danger") btn-sm">Anulate</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>#</th>
+                <th>Membru</th>
+                <th>Dată</th>
+                <th>Produse</th>
+                <th>Total</th>
+                <th>Metodă</th>
+                <th>Plată</th>
+                <th>Status</th>
+                <th>Acțiuni</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in Model.Orders)
+            {
+                <tr>
+                    <td class="fw-semibold">#@order.Id</td>
+                    <td>@order.Member.FirstName @order.Member.LastName</td>
+                    <td>@order.CreatedAt.ToString("dd MMM yyyy")</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none"
+                                data-bs-toggle="collapse" data-bs-target="#items-@order.Id">
+                            @order.Items.Count produs(e) <i class="bi bi-chevron-down small"></i>
+                        </button>
+                        <div class="collapse" id="items-@order.Id">
+                            <ul class="list-unstyled mt-1 mb-0 small text-muted">
+                                @foreach (var item in order.Items)
+                                {
+                                    <li>@item.Product.Name &times; @item.Quantity &mdash; @item.PriceAtPurchase RON</li>
+                                }
+                            </ul>
+                        </div>
+                    </td>
+                    <td><strong>@order.TotalAmount RON</strong></td>
+                    <td>
+                        <span class="badge @(order.PaymentMethod == PaymentMethod.Online ? "bg-secondary" : "bg-secondary")">
+                            @(order.PaymentMethod == PaymentMethod.Online ? "Online" : "La sală")
+                        </span>
+                    </td>
+                    <td>
+                        @if (order.PaymentStatus == PaymentStatus.Pending && order.PaymentMethod == PaymentMethod.InPerson)
+                        {
+                            <form method="post" asp-page-handler="MarkPaid">
+                                <input type="hidden" name="orderId" value="@order.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-cash me-1"></i>Încasează
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span class="badge @(order.PaymentStatus == PaymentStatus.Completed ? "bg-success" : "bg-warning")">
+                                @(order.PaymentStatus == PaymentStatus.Completed ? "Achitat" : "Neachitat")
+                            </span>
+                        }
+                    </td>
+                    <td>
+                        @{
+                            var (badgeClass, label) = order.Status switch
+                            {
+                                OrderStatus.Pending    => ("bg-warning",   "În așteptare"),
+                                OrderStatus.Processing => ("bg-primary",   "În curs"),
+                                OrderStatus.Delivered  => ("bg-success",   "Finalizat"),
+                                OrderStatus.Cancelled  => ("bg-danger",    "Anulat"),
+                                _                      => ("bg-secondary", order.Status.ToString())
+                            };
+                        }
+                        <span class="badge @badgeClass">@label</span>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1 flex-wrap">
+                            @if (order.Status == OrderStatus.Pending)
+                            {
+                                @if (order.PaymentMethod == PaymentMethod.InPerson)
+                                {
+                                    <form method="post" asp-page-handler="UpdateStatus">
+                                        <input type="hidden" name="orderId" value="@order.Id" />
+                                        <input type="hidden" name="status" value="Delivered" />
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-check me-1"></i>Înmânat
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-page-handler="UpdateStatus">
+                                        <input type="hidden" name="orderId" value="@order.Id" />
+                                        <input type="hidden" name="status" value="Processing" />
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-box me-1"></i>Pregătește
+                                        </button>
+                                    </form>
+                                }
+                                <form method="post" asp-page-handler="UpdateStatus">
+                                    <input type="hidden" name="orderId" value="@order.Id" />
+                                    <input type="hidden" name="status" value="Cancelled" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-x me-1"></i>Anulează
+                                    </button>
+                                </form>
+                            }
+                            @if (order.Status == OrderStatus.Processing)
+                            {
+                                <form method="post" asp-page-handler="UpdateStatus">
+                                    <input type="hidden" name="orderId" value="@order.Id" />
+                                    <input type="hidden" name="status" value="Delivered" />
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-truck me-1"></i>Livrat
+                                    </button>
+                                </form>
+                                <form method="post" asp-page-handler="UpdateStatus">
+                                    <input type="hidden" name="orderId" value="@order.Id" />
+                                    <input type="hidden" name="status" value="Cancelled" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-x me-1"></i>Anulează
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (!Model.Orders.Any())
+{
+    <div class="card p-4 text-center text-muted">Nu există comenzi.</div>
+}

@@ -1,0 +1,44 @@
+@page
+@model FitnessClub.Pages.Admin.Payments.IndexModel
+@{
+    ViewData["Title"] = "Plăți";
+}
+
+<h2 class="mb-4">Plăți</h2>
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Tip</th>
+                <th>Membru</th>
+                <th>Dată</th>
+                <th>Sumă</th>
+                <th>Metodă</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Records)
+            {
+                <tr>
+                    <td>@r.Type</td>
+                    <td>@r.MemberName</td>
+                    <td>@r.Date.ToString("dd MMM yyyy")</td>
+                    <td>@r.Amount RON</td>
+                    <td>@r.PaymentMethod</td>
+                    <td>
+                        <span class="badge @(r.Status == "Completed" ? "bg-success" : r.Status == "Pending" ? "bg-warning text-dark" : "bg-danger")">
+                            @(r.Status == "Completed" ? "Achitat" : r.Status == "Pending" ? "Neachitat" : r.Status)
+                        </span>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (!Model.Records.Any())
+{
+    <div class="text-center text-muted p-4">Nu există înregistrări de plăți.</div>
+}

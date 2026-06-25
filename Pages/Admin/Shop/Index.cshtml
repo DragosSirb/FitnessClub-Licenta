@@ -1,0 +1,143 @@
+@page
+@model FitnessClub.Pages.Admin.Shop.IndexModel
+@{
+    ViewData["Title"] = "Administrare magazin";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Administrare magazin</h2>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#categoryModal">Adaugă categorie</button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#productModal">
+            <i class="bi bi-plus-lg me-1"></i>Adaugă produs
+        </button>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr><th>Produs</th><th>Categorie</th><th>Preț</th><th>Stoc</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var product in Model.Products)
+            {
+                <tr class="@(product.Stock < 5 ? "table-warning" : "")">
+                    <td>
+                        @if (product.ImageUrl != null)
+                        {
+                            <img src="@product.ImageUrl" width="40" height="40" style="object-fit:cover;border-radius:4px" class="me-2" />
+                        }
+                        <strong>@product.Name</strong>
+                        <br /><small class="text-muted">@product.Description</small>
+                    </td>
+                    <td>@product.Category.Name</td>
+                    <td>@product.Price RON</td>
+                    <td>@product.Stock</td>
+                    <td><span class="badge @(product.IsActive ? "bg-success" : "bg-danger")">@(product.IsActive ? "Activ" : "Inactiv")</span></td>
+                    <td class="text-end">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><button type="button" class="dropdown-item" onclick="openProductEdit(@product.Id)"><i class="bi bi-pencil me-1"></i>Editează</button></li>
+                                <li>
+                                    <form method="post" asp-page-handler="ToggleProduct">
+                                        <input type="hidden" name="id" value="@product.Id" />
+                                        <button type="submit" class="dropdown-item @(product.IsActive ? "text-danger" : "text-success")">@(product.IsActive ? "Dezactivează" : "Activează")</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+                <tr id="product-edit-@product.Id" style="display:none" class="table-active">
+                    <td colspan="6">
+                        <form method="post" asp-page-handler="EditProduct" class="row g-2 align-items-end p-2">
+                            <input type="hidden" name="productId" value="@product.Id" />
+                            <div class="col-md-3"><label class="form-label small mb-1">Nume</label><input type="text" name="name" class="form-control form-control-sm" value="@product.Name" required /></div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1">Categorie</label>
+                                <select name="categoryId" class="form-select form-select-sm">
+                                    @foreach (var cat in Model.Categories) { <option value="@cat.Id" selected="@(cat.Id == product.CategoryId)">@cat.Name</option> }
+                                </select>
+                            </div>
+                            <div class="col-md-2"><label class="form-label small mb-1">Preț (RON)</label><input type="number" name="price" step="0.01" min="0" class="form-control form-control-sm" value="@product.Price" required /></div>
+                            <div class="col-md-1"><label class="form-label small mb-1">Stoc</label><input type="number" name="stock" min="0" class="form-control form-control-sm" value="@product.Stock" required /></div>
+                            <div class="col-md-2"><label class="form-label small mb-1">Descriere</label><input type="text" name="description" class="form-control form-control-sm" value="@product.Description" /></div>
+                            <div class="col-md-2 d-flex gap-2">
+                                <button type="submit" class="btn btn-sm btn-primary">Gata</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="closeProductEdit(@product.Id)">&#x2715;</button>
+                            </div>
+                        </form>
+                        <form method="post" asp-page-handler="UpdateImage" enctype="multipart/form-data" class="d-flex align-items-center gap-2 p-2 pt-0">
+                            <input type="hidden" name="productId" value="@product.Id" />
+                            <label class="form-label small mb-0">Imagine:</label>
+                            <input type="file" name="image" class="form-control form-control-sm" style="max-width:220px" accept="image/*" required />
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Încarcă</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="productModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Adaugă produs</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <form method="post" asp-page-handler="CreateProduct" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label">Nume *</label><input class="form-control" asp-for="Input.Name" /></div>
+                    <div class="mb-3"><label class="form-label">Categorie *</label>
+                        <select class="form-select" asp-for="Input.CategoryId">
+                            @foreach (var c in Model.Categories) { <option value="@c.Id">@c.Name</option> }
+                        </select>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Descriere</label><textarea class="form-control" asp-for="Input.Description" rows="2"></textarea></div>
+                    <div class="row">
+                        <div class="col-6 mb-3"><label class="form-label">Preț (RON) *</label><input class="form-control" asp-for="Input.Price" type="number" step="0.01" min="0" /></div>
+                        <div class="col-6 mb-3"><label class="form-label">Stoc *</label><input class="form-control" asp-for="Input.Stock" type="number" min="0" /></div>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Imagine</label><input class="form-control" type="file" asp-for="Input.Image" accept="image/*" /></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                    <button type="submit" class="btn btn-primary">Creează</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="categoryModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Adaugă categorie</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <form method="post" asp-page-handler="CreateCategory">
+                <div class="modal-body"><input class="form-control" asp-for="CatInput.Name" placeholder="Numele categoriei" /></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                    <button type="submit" class="btn btn-primary">Adaugă</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openProductEdit(id) {
+            document.querySelectorAll('[id^="product-edit-"]').forEach(function (r) { r.style.display = 'none'; });
+            document.getElementById('product-edit-' + id).style.display = '';
+        }
+        function closeProductEdit(id) { document.getElementById('product-edit-' + id).style.display = 'none'; }
+    </script>
+}

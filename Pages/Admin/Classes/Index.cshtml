@@ -1,0 +1,248 @@
+@page
+@model FitnessClub.Pages.Admin.Classes.IndexModel
+@using FitnessClub.Models.Enums
+@{
+    ViewData["Title"] = "Clase de grup";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Clase de grup</h2>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createClassModal">
+            <i class="bi bi-plus-lg me-1"></i>Adaugă clasă
+        </button>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#scheduleModal">
+            <i class="bi bi-calendar-plus me-1"></i>Adaugă programare
+        </button>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+@foreach (var cls in Model.Classes)
+{
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <strong>@cls.Name</strong>
+                <span class="ms-2 text-muted small">@cls.Trainer.FirstName @cls.Trainer.LastName &middot; @cls.DurationMinutes min</span>
+                @if (cls.IncludedInSubscription)
+                {
+                    <span class="badge bg-success ms-2">Inclus</span>
+                }
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
+                    <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <button type="button" class="dropdown-item" onclick="openClassEdit(@cls.Id)">
+                            <i class="bi bi-pencil me-1"></i>Editează clasa
+                        </button>
+                    </li>
+                    <li>
+                        <form method="post" asp-page-handler="DeleteClass" onsubmit="return confirm('Dezactivezi această clasă?')">
+                            <input type="hidden" name="id" value="@cls.Id" />
+                            <button type="submit" class="dropdown-item text-danger">
+                                <i class="bi bi-x-circle me-1"></i>Dezactivează
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div id="class-edit-@cls.Id" style="display:none" class="border-bottom bg-light">
+            <form method="post" asp-page-handler="EditClass" class="p-3">
+                <input type="hidden" name="classId" value="@cls.Id" />
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label small mb-1">Nume</label>
+                        <input type="text" name="name" class="form-control form-control-sm" value="@cls.Name" required />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small mb-1">Antrenor</label>
+                        <select name="trainerId" class="form-select form-select-sm">
+                            @foreach (var t in Model.Trainers)
+                            {
+                                <option value="@t.Id" selected="@(t.Id == cls.TrainerId)">@t.FirstName @t.LastName</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small mb-1">Durată (min)</label>
+                        <input type="number" name="durationMinutes" class="form-control form-control-sm" value="@cls.DurationMinutes" min="15" required />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small mb-1">Descriere</label>
+                        <input type="text" name="description" class="form-control form-control-sm" value="@cls.Description" />
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-check mt-4">
+                            <input type="hidden" name="includedInSubscription" value="false" />
+                            <input class="form-check-input" type="checkbox" name="includedInSubscription" value="true" @(cls.IncludedInSubscription ? "checked" : "") />
+                            <label class="form-check-label small">Inclus</label>
+                        </div>
+                    </div>
+                    <div class="col-md-1 d-flex gap-1">
+                        <button type="submit" class="btn btn-sm btn-primary">Gata</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="closeClassEdit(@cls.Id)">&#x2715;</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        @if (cls.Schedules.Any())
+        {
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr><th>Dată</th><th>Oră</th><th>Locație</th><th>Participanți</th><th>Status</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in cls.Schedules.OrderByDescending(x => x.Date).Take(5))
+                        {
+                            <tr>
+                                <td>@s.Date.ToString("dd MMM yyyy")</td>
+                                <td>@s.StartTime.ToString("HH:mm")</td>
+                                <td>@s.Location</td>
+                                <td>@s.CurrentParticipants / @s.MaxParticipants</td>
+                                <td><span class="badge @(s.Status == ScheduleStatus.Scheduled ? "bg-success" : s.Status == ScheduleStatus.Completed ? "bg-secondary" : "bg-danger")">@(s.Status == ScheduleStatus.Scheduled ? "Programat" : s.Status == ScheduleStatus.Completed ? "Finalizat" : "Anulat")</span></td>
+                                <td class="text-end">
+                                    @if (s.Status == ScheduleStatus.Scheduled)
+                                    {
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <button type="button" class="dropdown-item" onclick="openSchedEdit(@s.Id)">
+                                                        <i class="bi bi-pencil me-1"></i>Editează
+                                                    </button>
+                                                </li>
+                                                <li>
+                                                    <form method="post" asp-page-handler="CancelSchedule">
+                                                        <input type="hidden" name="scheduleId" value="@s.Id" />
+                                                        <button type="submit" class="dropdown-item text-danger">
+                                                            <i class="bi bi-x-circle me-1"></i>Anulează
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    }
+                                </td>
+                            </tr>
+                            @if (s.Status == ScheduleStatus.Scheduled)
+                            {
+                                <tr id="sched-edit-@s.Id" style="display:none" class="table-active">
+                                    <td colspan="6">
+                                        <form method="post" asp-page-handler="EditSchedule" class="row g-2 align-items-end p-2">
+                                            <input type="hidden" name="scheduleId" value="@s.Id" />
+                                            <div class="col-md-2">
+                                                <label class="form-label small mb-1">Dată</label>
+                                                <input type="date" name="date" class="form-control form-control-sm" value="@s.Date.ToString("yyyy-MM-dd")" required />
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-label small mb-1">Oră</label>
+                                                <input type="time" name="startTime" class="form-control form-control-sm" value="@s.StartTime.ToString("HH:mm")" required />
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label small mb-1">Locație</label>
+                                                <input type="text" name="location" class="form-control form-control-sm" value="@s.Location" required />
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-label small mb-1">Max. participanți</label>
+                                                <input type="number" name="maxParticipants" class="form-control form-control-sm" value="@s.MaxParticipants" min="1" required />
+                                            </div>
+                                            <div class="col-md-3 d-flex gap-2">
+                                                <button type="submit" class="btn btn-sm btn-primary">Gata</button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="closeSchedEdit(@s.Id)">&#x2715;</button>
+                                            </div>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+}
+
+<div class="modal fade" id="createClassModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Adaugă clasă de grup</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-page-handler="CreateClass">
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label">Nume *</label><input class="form-control" asp-for="Input.Name" /></div>
+                    <div class="mb-3">
+                        <label class="form-label">Antrenor *</label>
+                        <select class="form-select" asp-for="Input.TrainerId">
+                            @foreach (var t in Model.Trainers) { <option value="@t.Id">@t.FirstName @t.LastName</option> }
+                        </select>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Durată (min) *</label><input class="form-control" asp-for="Input.DurationMinutes" type="number" min="0" /></div>
+                    <div class="mb-3"><label class="form-label">Descriere</label><textarea class="form-control" asp-for="Input.Description" rows="2"></textarea></div>
+                    <div class="form-check"><input class="form-check-input" asp-for="Input.IncludedInSubscription" /><label class="form-check-label">Inclus în abonament</label></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                    <button type="submit" class="btn btn-primary">Creează</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="scheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Adaugă programare</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-page-handler="AddSchedule">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Clasă *</label>
+                        <select class="form-select" asp-for="SchedInput.GroupClassId">
+                            @foreach (var c in Model.Classes.Where(c => c.IsActive)) { <option value="@c.Id">@c.Name</option> }
+                        </select>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Dată *</label><input class="form-control" asp-for="SchedInput.Date" type="date" /></div>
+                    <div class="mb-3"><label class="form-label">Oră *</label><input class="form-control" asp-for="SchedInput.StartTime" type="time" /></div>
+                    <div class="mb-3"><label class="form-label">Locație *</label><input class="form-control" asp-for="SchedInput.Location" placeholder="ex. Studio 1" /></div>
+                    <div class="mb-3"><label class="form-label">Max. participanți *</label><input class="form-control" asp-for="SchedInput.MaxParticipants" type="number" min="0" /></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                    <button type="submit" class="btn btn-primary">Adaugă</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openSchedEdit(id) {
+            document.querySelectorAll('[id^="sched-edit-"]').forEach(function (r) { r.style.display = 'none'; });
+            document.getElementById('sched-edit-' + id).style.display = '';
+        }
+        function closeSchedEdit(id) { document.getElementById('sched-edit-' + id).style.display = 'none'; }
+        function openClassEdit(id) {
+            document.querySelectorAll('[id^="class-edit-"]').forEach(function (r) { r.style.display = 'none'; });
+            document.getElementById('class-edit-' + id).style.display = '';
+        }
+        function closeClassEdit(id) { document.getElementById('class-edit-' + id).style.display = 'none'; }
+    </script>
+}
