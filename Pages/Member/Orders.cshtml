@@ -1,0 +1,115 @@
+@page
+@model FitnessClub.Pages.Member.OrdersModel
+@using FitnessClub.Models.Enums
+@{
+    ViewData["Title"] = "Comenzile mele";
+    var activeOrders = Model.Orders.Where(o => o.Status == OrderStatus.Pending || o.Status == OrderStatus.Processing).ToList();
+    var completedOrders = Model.Orders.Where(o => o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Cancelled).ToList();
+}
+
+<h2 class="mb-4">Comenzile mele</h2>
+
+@if (!Model.Orders.Any())
+{
+    <div class="card p-5 text-center border-0 shadow-sm">
+        <i class="bi bi-bag-x fs-1 text-muted mb-3 d-block"></i>
+        <p class="text-muted mb-2">Nu ai nicio comandă încă.</p>
+        <a asp-page="/Shop/Index" class="btn btn-outline-primary">Vizitează magazinul</a>
+    </div>
+}
+else
+{
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link @(Model.Tab == "active" ? "active" : "")" asp-page="/Member/Orders" asp-route-tab="active">
+                Active
+                @if (activeOrders.Any())
+                {
+                    <span class="badge bg-primary rounded-pill ms-1">@activeOrders.Count</span>
+                }
+            </a>
+        </li>
+        <li class="nav-item ms-auto">
+            <a class="nav-link @(Model.Tab == "completed" ? "active" : "")" asp-page="/Member/Orders" asp-route-tab="completed" title="Comenzi finalizate">
+                <i class="bi bi-clock-history"></i>
+            </a>
+        </li>
+    </ul>
+
+    var displayOrders = Model.Tab == "completed" ? completedOrders : activeOrders;
+
+    @if (!displayOrders.Any())
+    {
+        <div class="card p-4 text-center text-muted">
+            @(Model.Tab == "completed" ? "Nu există comenzi finalizate." : "Nu există comenzi active.")
+        </div>
+    }
+    else
+    {
+        @foreach (var order in displayOrders)
+        {
+            var (orderIcon, orderColor, orderLabel) = order.Status switch
+            {
+                OrderStatus.Processing => ("bi-truck",            "text-primary", "În curs de livrare"),
+                OrderStatus.Delivered  => ("bi-check-circle-fill","text-success", "Finalizat"),
+                OrderStatus.Cancelled  => ("bi-x-circle-fill",    "text-danger",  "Anulat"),
+                _                      => ("bi-hourglass-split",  "text-warning", "Se pregătește")
+            };
+
+            var (payIcon, payColor, payLabel) = order.PaymentStatus switch
+            {
+                PaymentStatus.Completed => ("bi-check-circle-fill", "text-success", "Achitat"),
+                PaymentStatus.Failed    => ("bi-x-circle-fill",     "text-danger",  "Plată eșuată"),
+                _                       => ("bi-clock",             "text-warning", "Neachitat")
+            };
+
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold">Comanda #@order.Id</span>
+                            <span class="text-muted small ms-3">@order.CreatedAt.ToString("dd MMM yyyy, HH:mm")</span>
+                        </div>
+                        <div class="d-flex gap-4">
+                            <div class="text-end">
+                                <div class="text-muted" style="font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">Status comandă</div>
+                                <div class="fw-semibold @orderColor">
+                                    <i class="bi @orderIcon me-1"></i>@orderLabel
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="text-muted" style="font-size:0.7rem;text-transform:uppercase;letter-spacing:.05em;">Plată</div>
+                                <div class="fw-semibold @payColor">
+                                    <i class="bi @payIcon me-1"></i>@payLabel
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    @foreach (var item in order.Items)
+                    {
+                        <div class="d-flex align-items-center px-4 py-3 border-bottom">
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">@item.Product.Name</div>
+                                <small class="text-muted">Cant.: @item.Quantity &times; @item.PriceAtPurchase RON</small>
+                            </div>
+                            <div class="text-end fw-semibold">
+                                @(item.Quantity * item.PriceAtPurchase) RON
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted small">
+                        <i class="bi @(order.PaymentMethod == PaymentMethod.Online ? "bi-credit-card" : "bi-building") me-1"></i>
+                        @(order.PaymentMethod == PaymentMethod.Online ? "Plată online" : "Plată la sală")
+                    </span>
+                    <span class="fw-bold">Total: @order.TotalAmount RON</span>
+                </div>
+            </div>
+        }
+    }
+}

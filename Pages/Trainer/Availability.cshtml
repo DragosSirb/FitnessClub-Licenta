@@ -1,0 +1,103 @@
+@page
+@model FitnessClub.Pages.Trainer.AvailabilityModel
+@{
+    ViewData["Title"] = "Disponibilitatea mea";
+}
+
+<h2 class="mb-4">Disponibilitatea mea</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card p-4 mb-4">
+            <h5 class="mb-3">Program săptămânal</h5>
+            <form method="post" asp-page-handler="AddAvailability">
+                <div class="mb-3">
+                    <label class="form-label">Ziua săptămânii</label>
+                    <select class="form-select" asp-for="AvailInput.DayOfWeek">
+                        @foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+                        {
+                            <option value="@((int)day)">@day</option>
+                        }
+                    </select>
+                </div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="form-label">Oră început</label>
+                        <input class="form-control" asp-for="AvailInput.StartTime" type="time" />
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="form-label">Oră sfârșit</label>
+                        <input class="form-control" asp-for="AvailInput.EndTime" type="time" />
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Salvează</button>
+            </form>
+        </div>
+
+        @if (Model.Availabilities.Any())
+        {
+            <div class="card p-3">
+                <h6 class="mb-3">Programul curent</h6>
+                @foreach (var a in Model.Availabilities)
+                {
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <div>
+                            <strong>@a.DayOfWeek</strong>
+                            <span class="text-muted ms-2">@a.StartTime.ToString("HH:mm") - @a.EndTime.ToString("HH:mm")</span>
+                        </div>
+                        <form method="post" asp-page-handler="DeleteAvailability">
+                            <input type="hidden" name="id" value="@a.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Șterge</button>
+                        </form>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="col-md-6">
+        <div class="card p-4 mb-4">
+            <h5 class="mb-3">Zile indisponibile</h5>
+            <p class="text-muted small">Adaugă zilele când nu ești disponibil (concediu, programări etc.)</p>
+            <form method="post" asp-page-handler="AddUnavailability">
+                <div class="mb-3">
+                    <label class="form-label">Dată</label>
+                    <input class="form-control" asp-for="UnavailInput.Date" type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Motiv (opțional)</label>
+                    <input class="form-control" asp-for="UnavailInput.Reason" placeholder="Concediu, programare etc." />
+                </div>
+                <button type="submit" class="btn btn-outline-danger btn-sm">Adaugă zi indisponibilă</button>
+            </form>
+        </div>
+
+        @if (Model.Unavailabilities.Any())
+        {
+            <div class="card p-3">
+                <h6 class="mb-3">Zile indisponibile viitoare</h6>
+                @foreach (var u in Model.Unavailabilities)
+                {
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <div>
+                            <strong>@u.Date.ToString("dd MMM yyyy")</strong>
+                            @if (u.Reason != null)
+                            {
+                                <span class="text-muted ms-2 small">@u.Reason</span>
+                            }
+                        </div>
+                        <form method="post" asp-page-handler="DeleteUnavailability">
+                            <input type="hidden" name="id" value="@u.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Șterge</button>
+                        </form>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,90 @@
+@page
+@model FitnessClub.Pages.Trainer.SessionsModel
+@using FitnessClub.Models.Enums
+@{
+    ViewData["Title"] = "Sesiunile mele";
+}
+
+<h2 class="mb-4">Sesiunile mele</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item"><a class="nav-link @(Model.Tab == "pending" ? "active" : "")" asp-page="/Trainer/Sessions" asp-route-tab="pending">În așteptare</a></li>
+    <li class="nav-item"><a class="nav-link @(Model.Tab == "confirmed" ? "active" : "")" asp-page="/Trainer/Sessions" asp-route-tab="confirmed">Confirmate</a></li>
+    <li class="nav-item"><a class="nav-link @(Model.Tab == "completed" ? "active" : "")" asp-page="/Trainer/Sessions" asp-route-tab="completed">Finalizate</a></li>
+    <li class="nav-item"><a class="nav-link @(Model.Tab == "cancelled" ? "active" : "")" asp-page="/Trainer/Sessions" asp-route-tab="cancelled">Anulate</a></li>
+</ul>
+
+@if (!Model.Sessions.Any())
+{
+    <div class="card p-4 text-center text-muted">Nu există sesiuni în această categorie.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Membru</th>
+                    <th>Dată</th>
+                    <th>Oră</th>
+                    <th>Durată</th>
+                    <th>Plată</th>
+                    <th>Note</th>
+                    <th>Acțiuni</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var session in Model.Sessions)
+                {
+                    <tr>
+                        <td>@session.Member.FirstName @session.Member.LastName</td>
+                        <td>@session.Date.ToString("dd MMM yyyy")</td>
+                        <td>@session.StartTime.ToString("HH:mm")</td>
+                        <td>@session.DurationMinutes min</td>
+                        <td>
+                            <span class="badge @(session.PaymentStatus == PaymentStatus.Completed ? "bg-success" : "bg-warning text-dark")">
+                                @(session.PaymentStatus == PaymentStatus.Completed ? "Achitat" : "Neachitat")
+                            </span>
+                        </td>
+                        <td>
+                            <span class="small text-muted">@(session.Notes ?? "—")</span>
+                        </td>
+                        <td>
+                            @if (session.Status == SessionStatus.Completed)
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#noteModal_@session.Id">
+                                    Adaugă notă
+                                </button>
+                                <div class="modal fade" id="noteModal_@session.Id" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Adaugă notă pentru @session.Member.FirstName</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <form method="post" asp-page-handler="AddNote">
+                                                <div class="modal-body">
+                                                    <input type="hidden" name="sessionId" value="@session.Id" />
+                                                    <textarea name="note" class="form-control" rows="4" placeholder="Note de antrenament..." required></textarea>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                                                    <button type="submit" class="btn btn-primary">Salvează nota</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

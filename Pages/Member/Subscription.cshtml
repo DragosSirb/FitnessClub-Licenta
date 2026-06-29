@@ -1,0 +1,117 @@
+@page
+@model FitnessClub.Pages.Member.SubscriptionModel
+@using FitnessClub.Models.Enums
+@{
+    ViewData["Title"] = "Abonamentul meu";
+}
+
+<h2 class="mb-4">Abonamentul meu</h2>
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link @(Model.Tab == "current" ? "active" : "")" asp-page="/Member/Subscription" asp-route-tab="current">Planul curent</a>
+    </li>
+    <li class="nav-item ms-auto">
+        <a class="nav-link @(Model.Tab == "history" ? "active" : "")" asp-page="/Member/Subscription" asp-route-tab="history" title="Istoric">
+            <i class="bi bi-clock-history"></i>
+        </a>
+    </li>
+</ul>
+
+@if (Model.Tab == "history")
+{
+    @if (!Model.History.Any())
+    {
+        <div class="card p-4 text-center text-muted">Nu există istoric de abonamente.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Plan</th>
+                        <th>Început</th>
+                        <th>Expirat</th>
+                        <th>Sumă</th>
+                        <th>Plată</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var sub in Model.History)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@sub.Plan.Name</td>
+                            <td>@sub.StartDate.ToString("dd MMM yyyy")</td>
+                            <td>@sub.EndDate.ToString("dd MMM yyyy")</td>
+                            <td>@sub.PricePaid RON</td>
+                            <td>@(sub.PaymentMethod == PaymentMethod.Online ? "Online" : "La sală")</td>
+                            <td>
+                                <span class="badge @(sub.Status == SubscriptionStatus.Expired ? "bg-secondary" : "bg-danger")">
+                                    @(sub.Status == SubscriptionStatus.Expired ? "Expirat" : "Anulat")
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+else
+{
+    <div class="row g-3">
+        <div class="col-md-7">
+            @if (Model.ActiveSubscription != null && (Model.ActiveSubscription.EndDate - DateTime.Today).Days >= 0)
+            {
+                var daysLeft = (Model.ActiveSubscription.EndDate - DateTime.Today).Days;
+                var totalDays = Math.Max(1, (Model.ActiveSubscription.EndDate - Model.ActiveSubscription.StartDate).Days);
+                var pct = Math.Min(100, (int)((DateTime.Today - Model.ActiveSubscription.StartDate).Days * 100.0 / totalDays));
+                var barColor = daysLeft <= 7 ? "bg-danger" : daysLeft <= 14 ? "bg-warning" : "bg-success";
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="text-muted small fw-semibold text-uppercase mb-1" style="letter-spacing:.06em">Planul curent</div>
+                            <h4 class="mb-0">@Model.ActiveSubscription.Plan.Name</h4>
+                        </div>
+                        <span class="badge bg-success fs-6">Activ</span>
+                    </div>
+                    <p class="text-muted small">@Model.ActiveSubscription.Plan.Description</p>
+                    <div class="progress mb-2">
+                        <div class="progress-bar @barColor" style="width:@pct%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between small mb-3">
+                        <span class="text-muted">@Model.ActiveSubscription.StartDate.ToString("dd MMM yyyy")</span>
+                        <span class="@(daysLeft <= 7 ? "text-danger" : "text-muted") fw-semibold">@daysLeft zile rămase</span>
+                        <span class="text-muted">@Model.ActiveSubscription.EndDate.ToString("dd MMM yyyy")</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge @(Model.ActiveSubscription.PaymentStatus == PaymentStatus.Pending ? "bg-warning" : "bg-success")">
+                            Plată: @(Model.ActiveSubscription.PaymentStatus == PaymentStatus.Completed ? "Achitat" : "Neachitat")
+                        </span>
+                        <a asp-page="/Member/Plans" class="btn btn-outline-primary btn-sm">Schimbă planul</a>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card p-4 text-center">
+                    <i class="bi bi-credit-card fs-2 text-muted d-block mb-3"></i>
+                    <h5 class="mb-2">Niciun abonament activ</h5>
+                    <p class="text-muted mb-4">Alege un plan pentru a accesa toate facilitățile sălii.</p>
+                    <a asp-page="/Member/Plans" class="btn btn-primary">Vezi planurile disponibile</a>
+                </div>
+            }
+        </div>
+        <div class="col-md-5">
+            <div class="card p-4 h-100">
+                <div class="text-muted small fw-semibold text-uppercase mb-3" style="letter-spacing:.06em">Planuri disponibile</div>
+                <a asp-page="/Member/Plans" class="btn btn-outline-primary w-100 mb-2">
+                    <i class="bi bi-arrow-right-circle me-2"></i>Explorează planuri
+                </a>
+                <p class="text-muted small mt-2">Compară planurile și alege cel mai potrivit pentru tine.</p>
+            </div>
+        </div>
+    </div>
+}

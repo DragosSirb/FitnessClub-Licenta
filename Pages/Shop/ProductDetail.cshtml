@@ -1,0 +1,104 @@
+@page "{id:int}"
+@model FitnessClub.Pages.Shop.ProductDetailModel
+@{
+    ViewData["Title"] = Model.Product?.Name ?? "Produs";
+}
+
+<div class="mb-3">
+    <a asp-page="/Shop/Index" class="text-decoration-none text-secondary small">
+        <i class="bi bi-arrow-left me-1"></i>Înapoi la magazin
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+@if (Model.Product == null)
+{
+    <div class="card p-4 text-center text-muted">Produsul nu a fost găsit.</div>
+}
+else
+{
+    <div class="row g-5 align-items-start">
+        <div class="col-md-5">
+            @if (Model.Product.ImageUrl != null)
+            {
+                <img src="@Model.Product.ImageUrl" class="img-fluid rounded" alt="@Model.Product.Name"
+                     style="max-height:360px;width:100%;object-fit:contain;" />
+            }
+            else
+            {
+                <div class="d-flex align-items-center justify-content-center bg-light rounded" style="height:360px">
+                    <i class="bi bi-box fs-1 text-muted"></i>
+                </div>
+            }
+        </div>
+        <div class="col-md-7">
+            <span class="badge bg-secondary mb-2">@Model.Product.Category.Name</span>
+            <h2 class="fw-bold mb-3">@Model.Product.Name</h2>
+
+            <div class="bg-light rounded p-3 mb-4 border-start border-4 border-primary">
+                <p class="mb-0 fs-6 lh-lg text-secondary">@Model.Product.Description</p>
+            </div>
+
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <span class="fs-2 fw-bold text-purple">@Model.Product.Price RON</span>
+                @if (Model.Product.Stock > 0)
+                {
+                    <span class="text-success small">
+                        <i class="bi bi-check-circle me-1"></i>În stoc (@Model.Product.Stock disponibile)
+                    </span>
+                }
+                else
+                {
+                    <span class="text-danger small">
+                        <i class="bi bi-x-circle me-1"></i>Stoc epuizat
+                    </span>
+                }
+            </div>
+
+            @if (User.IsInRole("member") && Model.Product.Stock > 0)
+            {
+                <form method="post" asp-page-handler="AddToCart" class="d-flex gap-3 align-items-center flex-wrap">
+                    <div class="d-flex align-items-center gap-1">
+                        <button type="button" class="btn btn-outline-secondary px-3" onclick="adjustQty(-1)">−</button>
+                        <input type="number" id="qtyInput" name="quantity" value="1" min="1" max="@Model.Product.Stock"
+                               class="form-control text-center fw-semibold" style="width:64px" />
+                        <button type="button" class="btn btn-outline-secondary px-3" onclick="adjustQty(1)">+</button>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-cart-plus me-2"></i>Adaugă în coș
+                    </button>
+                    <a asp-page="/Shop/Checkout" class="btn btn-outline-secondary btn-lg">Vezi coșul</a>
+                </form>
+            }
+            else if (!User.Identity!.IsAuthenticated)
+            {
+                <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-primary btn-lg">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Conectează-te pentru a cumpăra
+                </a>
+            }
+            else if (Model.Product.Stock == 0)
+            {
+                <button class="btn btn-secondary btn-lg" disabled>Stoc epuizat</button>
+            }
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function adjustQty(delta) {
+            var input = document.getElementById('qtyInput');
+            if (!input) return;
+            var val = parseInt(input.value) + delta;
+            input.value = Math.min(Math.max(val, parseInt(input.min)), parseInt(input.max));
+        }
+    </script>
+}

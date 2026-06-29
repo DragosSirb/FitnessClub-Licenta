@@ -1,0 +1,51 @@
+@page
+@model FitnessClub.Pages.Admin.Notifications.IndexModel
+@{
+    ViewData["Title"] = "Trimite notificări";
+}
+
+<h2 class="mb-4">Trimite notificări</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card p-4">
+            <h5 class="mb-3">Compune notificarea</h5>
+            <form method="post" asp-page-handler="Send">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label class="form-label">Destinatar</label>
+                    <select class="form-select" asp-for="Input.MemberId">
+                        <option value="">Toți membrii</option>
+                        @foreach (var member in Model.Members)
+                        {
+                            <option value="@member.Id">@member.FirstName @member.LastName (@member.User.Email)</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Titlu *</label>
+                    <input class="form-control" asp-for="Input.Title" placeholder="Titlul notificării" />
+                    <span asp-validation-for="Input.Title" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Mesaj *</label>
+                    <textarea class="form-control" asp-for="Input.Message" rows="4" placeholder="Textul notificării..."></textarea>
+                    <span asp-validation-for="Input.Message" class="text-danger"></span>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send me-2"></i>Trimite notificarea
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

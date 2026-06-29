@@ -1,0 +1,51 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "Conectare";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5 col-lg-4">
+        <div class="text-center mb-4">
+            <span class="fs-3 fw-bold">Fitness<span class="text-accent">Club</span></span>
+            <p class="text-muted mt-1 mb-0">Conectează-te pentru a continua</p>
+        </div>
+        <div class="card p-4">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <form method="post">
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input asp-for="Input.Email" class="form-control" placeholder="adresa@exemplu.com" />
+                    <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <label class="form-label mb-0">Parolă</label>
+                        <a asp-page="./ForgotPassword" class="text-muted small">Ai uitat parola?</a>
+                    </div>
+                    <div class="input-group">
+                        <input asp-for="Input.Password" class="form-control" type="password" placeholder="Parola ta" id="loginPassword" />
+                        <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('loginPassword', this)" tabindex="-1">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                </div>
+                <div class="mb-4 form-check">
+                    <input class="form-check-input" asp-for="Input.RememberMe" />
+                    <label class="form-check-label" asp-for="Input.RememberMe">Ține-mă minte</label>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Conectare</button>
+            </form>
+            <p class="text-center text-muted small mt-4 mb-0">
+                Nu ai cont?
+                <a asp-page="./Register">Înregistrează-te</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

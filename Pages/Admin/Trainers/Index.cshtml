@@ -1,0 +1,98 @@
+@page
+@model FitnessClub.Pages.Admin.Trainers.IndexModel
+@{
+    ViewData["Title"] = "Antrenori";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Antrenori</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
+        <i class="bi bi-plus-lg me-1"></i>Adaugă antrenor
+    </button>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Nume</th>
+                <th>Email</th>
+                <th>Specializare</th>
+                <th>Sesiuni</th>
+                <th>Clase</th>
+                <th>Status</th>
+                <th>Acțiuni</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var trainer in Model.Trainers)
+            {
+                <tr style="cursor:pointer" onclick="window.location='/Admin/Trainers/Detail/@trainer.Id'">
+                    <td>@trainer.FirstName @trainer.LastName</td>
+                    <td>@trainer.User.Email</td>
+                    <td>@trainer.Expertise</td>
+                    <td>@trainer.BookedSessions.Count</td>
+                    <td>@trainer.GroupClasses.Count</td>
+                    <td><span class="badge @(trainer.IsActive ? "bg-success" : "bg-danger")">@(trainer.IsActive ? "Activ" : "Inactiv")</span></td>
+                    <td onclick="event.stopPropagation()">
+                        <form method="post" asp-page-handler="ToggleActive" class="d-inline">
+                            <input type="hidden" name="trainerId" value="@trainer.Id" />
+                            <button type="submit" class="btn btn-sm @(trainer.IsActive ? "btn-outline-danger" : "btn-outline-success")">
+                                @(trainer.IsActive ? "Dezactivează" : "Activează")
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Adaugă antrenor nou</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-body">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    <div class="mb-3">
+                        <label class="form-label">Email *</label>
+                        <input class="form-control" asp-for="Input.Email" />
+                        <span asp-validation-for="Input.Email" class="text-danger"></span>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Prenume *</label>
+                            <input class="form-control" asp-for="Input.FirstName" />
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Nume *</label>
+                            <input class="form-control" asp-for="Input.LastName" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Specializare *</label>
+                        <input class="form-control" asp-for="Input.Expertise" placeholder="ex. Fitness, Yoga, Cardio" />
+                    </div>
+                    <p class="text-muted small">O parolă temporară va fi generată și afișată. Antrenorul trebuie să o schimbe la prima conectare.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                    <button type="submit" class="btn btn-primary">Creează cont</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

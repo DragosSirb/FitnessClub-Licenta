@@ -1,0 +1,91 @@
+@page
+@model FitnessClub.Pages.Admin.Events.IndexModel
+@using FitnessClub.Models.Enums
+@{
+    ViewData["Title"] = "Evenimente";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Evenimente</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
+        <i class="bi bi-plus-lg me-1"></i>Adaugă eveniment
+    </button>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Nume</th>
+                <th>Dată</th>
+                <th>Locație</th>
+                <th>Preț</th>
+                <th>Înscriși</th>
+                <th>Status</th>
+                <th>Acțiuni</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var ev in Model.Events)
+            {
+                <tr>
+                    <td><strong>@ev.Name</strong><br /><small class="text-muted">@ev.Description</small></td>
+                    <td>@ev.Date.ToString("dd MMM yyyy")<br /><small>@ev.StartTime.ToString("HH:mm") - @ev.EndTime.ToString("HH:mm")</small></td>
+                    <td>@ev.Location</td>
+                    <td>@ev.Price RON</td>
+                    <td>@ev.Enrollments.Count / @ev.MaxParticipants</td>
+                    <td>
+                        <span class="badge @(ev.Status == EventStatus.Upcoming ? "bg-success" : ev.Status == EventStatus.Completed ? "bg-secondary" : "bg-danger")">
+                            @(ev.Status == EventStatus.Upcoming ? "Viitor" : ev.Status == EventStatus.Completed ? "Finalizat" : "Anulat")
+                        </span>
+                    </td>
+                    <td>
+                        @if (ev.Status == EventStatus.Upcoming)
+                        {
+                            <form method="post" asp-page-handler="Cancel" onsubmit="return confirm('Anulezi evenimentul? Toți participanții vor fi notificați.')">
+                                <input type="hidden" name="id" value="@ev.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Anulează</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Adaugă eveniment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label">Nume *</label><input class="form-control" asp-for="Input.Name" /></div>
+                    <div class="mb-3"><label class="form-label">Descriere</label><textarea class="form-control" asp-for="Input.Description" rows="2"></textarea></div>
+                    <div class="mb-3"><label class="form-label">Dată *</label><input class="form-control" asp-for="Input.Date" type="date" /></div>
+                    <div class="row">
+                        <div class="col-6 mb-3"><label class="form-label">Oră început *</label><input class="form-control" asp-for="Input.StartTime" type="time" /></div>
+                        <div class="col-6 mb-3"><label class="form-label">Oră sfârșit *</label><input class="form-control" asp-for="Input.EndTime" type="time" /></div>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Locație *</label><input class="form-control" asp-for="Input.Location" /></div>
+                    <div class="row">
+                        <div class="col-6 mb-3"><label class="form-label">Preț (RON) *</label><input class="form-control" asp-for="Input.Price" type="number" step="0.01" min="0" /></div>
+                        <div class="col-6 mb-3"><label class="form-label">Max. participanți *</label><input class="form-control" asp-for="Input.MaxParticipants" type="number" min="0" /></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                    <button type="submit" class="btn btn-primary">Creează</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

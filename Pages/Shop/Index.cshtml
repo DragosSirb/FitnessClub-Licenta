@@ -1,0 +1,79 @@
+@page
+@model FitnessClub.Pages.Shop.IndexModel
+@{
+    ViewData["Title"] = "Magazin";
+    var cart = Model.GetCart();
+    var cartTotal = cart.Count;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Magazin</h2>
+    @if (cartTotal > 0 && User.IsInRole("member"))
+    {
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary fs-6">
+                <i class="bi bi-cart me-1"></i>@cartTotal produs(e)
+            </span>
+            <form method="post" asp-page-handler="Checkout">
+                <button type="submit" class="btn btn-success">Finalizează comanda</button>
+            </form>
+        </div>
+    }
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="mb-3 d-flex flex-wrap gap-2">
+    <a asp-page="/Shop/Index" class="btn @(Model.CategoryId == null ? "btn-primary" : "btn-outline-primary") btn-sm">Toate</a>
+    @foreach (var cat in Model.Categories)
+    {
+        <a asp-page="/Shop/Index" asp-route-categoryId="@cat.Id"
+           class="btn @(Model.CategoryId == cat.Id ? "btn-primary" : "btn-outline-primary") btn-sm">
+            @cat.Name
+        </a>
+    }
+</div>
+
+<div class="row">
+    @foreach (var product in Model.Products)
+    {
+        <div class="col-md-3 mb-4">
+            <a asp-page="/Shop/ProductDetail" asp-route-id="@product.Id" class="card h-100 text-decoration-none text-dark">
+                @if (product.ImageUrl != null)
+                {
+                    <img src="@product.ImageUrl" class="card-img-top" alt="@product.Name" style="height:180px;object-fit:cover" />
+                }
+                else
+                {
+                    <div class="d-flex align-items-center justify-content-center bg-light" style="height:180px">
+                        <i class="bi bi-box fs-1 text-muted"></i>
+                    </div>
+                }
+                <div class="card-body d-flex flex-column">
+                    <span class="text-muted small">@product.Category.Name</span>
+                    <h6 class="card-title mt-1">@product.Name</h6>
+                    <p class="card-text small text-muted flex-grow-1">@(product.Description.Length > 80 ? product.Description[..80] + "…" : product.Description)</p>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <strong class="text-purple">@product.Price RON</strong>
+                        @if (product.Stock == 0)
+                        {
+                            <span class="badge bg-secondary">Stoc epuizat</span>
+                        }
+                    </div>
+                </div>
+            </a>
+        </div>
+    }
+</div>
+
+@if (!Model.Products.Any())
+{
+    <div class="card p-4 text-center text-muted">Nu există produse în această categorie.</div>
+}

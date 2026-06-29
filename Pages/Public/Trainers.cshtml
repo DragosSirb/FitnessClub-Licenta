@@ -1,0 +1,49 @@
+@page
+@model FitnessClub.Pages.Public.TrainersModel
+@{
+    ViewData["Title"] = "Antrenorii noștri";
+}
+
+<h2 class="text-center mb-4">Antrenorii noștri</h2>
+
+<div class="row">
+    @foreach (var trainer in Model.Trainers)
+    {
+        <div class="col-md-4 mb-4">
+            <div class="card text-center p-4 h-100 d-flex flex-column">
+                @if (trainer.ProfileImageUrl != null)
+                {
+                    <img src="@trainer.ProfileImageUrl" class="rounded-circle mx-auto d-block mb-3" width="120" height="120" style="object-fit:cover" alt="@trainer.FirstName" />
+                }
+                else
+                {
+                    <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center text-white mb-3" style="width:120px;height:120px;background-color:#1f6f4a;font-size:2.5rem">
+                        @trainer.FirstName[0]@trainer.LastName[0]
+                    </div>
+                }
+                <h5>@trainer.FirstName @trainer.LastName</h5>
+                <p class="text-purple fw-semibold">@trainer.Expertise</p>
+                <p class="text-muted small">@trainer.YearsOfExperience ani experiență</p>
+                @if (!string.IsNullOrEmpty(trainer.Description))
+                {
+                    <p class="small flex-grow-1">@trainer.Description</p>
+                }
+                <div class="d-grid mt-auto">
+                    @if (User.IsInRole("member"))
+                    {
+                        <a asp-page="/Member/BookSession" asp-route-trainerId="@trainer.Id" class="btn btn-primary">Rezervă o sesiune</a>
+                    }
+                    else if (!User.Identity!.IsAuthenticated)
+                    {
+                        <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-primary">Rezervă o sesiune</a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@if (!Model.Trainers.Any())
+{
+    <div class="text-center text-muted p-5">Nu există antrenori disponibili în acest moment.</div>
+}

@@ -1,0 +1,73 @@
+@page
+@model FitnessClub.Pages.Trainer.ClientsModel
+@{
+    ViewData["Title"] = "Clienții mei";
+}
+
+<h2 class="mb-4">Clienții mei</h2>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="list-group">
+            @foreach (var client in Model.Clients)
+            {
+                <a asp-page="/Trainer/Clients" asp-route-memberId="@client.Member.Id"
+                   class="list-group-item list-group-item-action @(Model.SelectedMemberId == client.Member.Id ? "active" : "")">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="fw-semibold">@client.Member.FirstName @client.Member.LastName</div>
+                            <div class="small">Ultima sesiune: @client.LastSessionDate.ToString("dd MMM yyyy")</div>
+                        </div>
+                        <span class="badge bg-secondary align-self-center">@client.TotalSessions</span>
+                    </div>
+                </a>
+            }
+        </div>
+        @if (!Model.Clients.Any())
+        {
+            <div class="card p-3 text-muted text-center">Nu ai clienți încă.</div>
+        }
+    </div>
+
+    @if (Model.SelectedMemberId.HasValue)
+    {
+        var client = Model.Clients.FirstOrDefault(c => c.Member.Id == Model.SelectedMemberId);
+        <div class="col-md-8">
+            @if (client != null)
+            {
+                <div class="card p-3 mb-3">
+                    <h5>@client.Member.FirstName @client.Member.LastName</h5>
+                    <p class="text-muted small mb-1">Total sesiuni împreună: @client.TotalSessions</p>
+                    <p class="text-muted small mb-0">Ultima sesiune: @client.LastSessionDate.ToString("dd MMM yyyy")</p>
+                </div>
+            }
+
+            <div class="card p-3 mb-3">
+                <h6 class="mb-3">Adaugă notă</h6>
+                <form method="post" asp-page-handler="AddNote">
+                    <input type="hidden" name="memberId" value="@Model.SelectedMemberId" />
+                    <textarea name="note" class="form-control mb-2" rows="3" placeholder="Notă de antrenament..." required></textarea>
+                    <button type="submit" class="btn btn-primary btn-sm">Adaugă</button>
+                </form>
+            </div>
+
+            @if (Model.Notes.Any())
+            {
+                <h6 class="mb-2">Istoric note</h6>
+                @foreach (var note in Model.Notes)
+                {
+                    <div class="card mb-2 p-3">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">@note.Date.ToString("dd MMM yyyy HH:mm")</span>
+                        </div>
+                        <p class="mb-0 mt-1">@note.Note</p>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-muted small">Nu există note pentru acest client.</div>
+            }
+        </div>
+    }
+</div>
